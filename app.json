@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Binance",
+    "slug": "binance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "Binance",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon-foreground.png",
+        "backgroundColor": "#0B0E11"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ajkipz.Binance"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-screen.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0E11",
+          "dark": {
+            "backgroundColor": "#0B0E11"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b16feeea-6e3b-4881-999e-c94b82589089"
+      }
+    },
+    "owner": "ajkipz"
+  }
+}
