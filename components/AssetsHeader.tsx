@@ -39,6 +39,12 @@ export function AssetsHeader() {
   const [ethPrice, setEthPrice] = useState(3200);
   const [pnl, setPnl] = useState({ usd: '$0.00', percent: '0.00%', isPositive: true });
 
+  const formatNumber = (num: number, decimals: number = 2) => {
+    const parts = num.toFixed(decimals).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  };
+
   const SPOT_SUB_TABS = ['Spot', 'Cross Margin', 'Isolated Margin'];
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isBalanceVisible, setBalanceVisible] = useState(true);
@@ -63,7 +69,7 @@ export function AssetsHeader() {
           const priceChange = parseFloat(data.P);
           const pnlUsd = (globalBalance * (priceChange / 100));
           setPnl({
-            usd: `${pnlUsd >= 0 ? '+' : '-'}$${Math.abs(pnlUsd).toFixed(2)}`,
+            usd: `${pnlUsd >= 0 ? '+' : '-'}$${formatNumber(Math.abs(pnlUsd), 2)}`,
             percent: `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%`,
             isPositive: priceChange >= 0
           });
@@ -208,14 +214,14 @@ export function AssetsHeader() {
               <ThemedText type="bold" style={styles.mainBalance}>
                 {isBalanceVisible 
                   ? (selectedCurrency === 'USDT' 
-                      ? globalBalance.toFixed(2) 
+                      ? formatNumber(globalBalance, 2) 
                       : (selectedCurrency === 'BTC' 
-                          ? (globalBalance / btcPrice).toFixed(8) 
+                          ? formatNumber(globalBalance / btcPrice, 8) 
                           : (selectedCurrency === 'BNB' 
-                              ? (globalBalance / bnbPrice).toFixed(4)
+                              ? formatNumber(globalBalance / bnbPrice, 4)
                               : (selectedCurrency === 'ETH'
-                                  ? (globalBalance / ethPrice).toFixed(6)
-                                  : globalBalance.toFixed(2))))) 
+                                  ? formatNumber(globalBalance / ethPrice, 6)
+                                  : formatNumber(globalBalance, 2))))) 
                   : '******** '}
               </ThemedText>
 
@@ -264,7 +270,7 @@ export function AssetsHeader() {
           <ThemedText
             style={[styles.fiatEstimate, { color: theme.textSecondary }]}
           >
-            {isBalanceVisible ? `≈$${globalBalance.toFixed(2)}` : '≈****'}
+            {isBalanceVisible ? `≈$${formatNumber(globalBalance, 2)}` : '≈****'}
           </ThemedText>
         </View>
 

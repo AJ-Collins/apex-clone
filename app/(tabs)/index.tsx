@@ -143,6 +143,12 @@ export default function HomeScreen() {
   const [ethPrice, setEthPrice] = useState(3200);
   const [pnl, setPnl] = useState({ usd: '$0.00', percent: '0.00%', isPositive: true });
 
+  const formatNumber = (num: number, decimals: number = 2) => {
+    const parts = num.toFixed(decimals).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  };
+
   const [discoverPosts, setDiscoverPosts] = useState<any[]>(DISCOVER_POSTS);
 
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -254,7 +260,7 @@ export default function HomeScreen() {
               setBnbPrice(lastPrice);
               const pnlUsd = (globalBalance * (priceChange / 100));
               setPnl({
-                usd: `${pnlUsd >= 0 ? '+' : '-'}$${Math.abs(pnlUsd).toFixed(2)}`,
+                usd: `${pnlUsd >= 0 ? '+' : '-'}$${formatNumber(Math.abs(pnlUsd), 2)}`,
                 percent: `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%`,
                 isPositive: priceChange >= 0
               });
@@ -268,14 +274,9 @@ export default function HomeScreen() {
               setEthPrice(lastPrice);
             }
 
-            let formattedPrice = '';
-            if (lastPrice >= 1000) formattedPrice = lastPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            else formattedPrice = lastPrice.toFixed(2);
-
+            let formattedPrice = formatNumber(lastPrice, 2);
             const usdVal = lastPrice;
-            let formattedUsd = '';
-            if (usdVal >= 1000) formattedUsd = usdVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            else formattedUsd = usdVal.toFixed(2);
+            let formattedUsd = formatNumber(usdVal, 2);
 
             newTokens[idx] = {
               ...newTokens[idx],
@@ -413,20 +414,20 @@ export default function HomeScreen() {
           <View style={styles.balMid}>
             <ThemedText style={[styles.balAmount, { color: theme.text }]}>
               {selectedCurrency === 'USDT'
-                ? globalBalance.toFixed(2)
+                ? formatNumber(globalBalance, 2)
                 : selectedCurrency === 'BTC'
-                  ? (globalBalance / btcPrice).toFixed(8)
+                  ? formatNumber(globalBalance / btcPrice, 8)
                   : selectedCurrency === 'ETH'
-                    ? (globalBalance / ethPrice).toFixed(6)
+                    ? formatNumber(globalBalance / ethPrice, 6)
                     : selectedCurrency === 'BNB'
-                      ? (globalBalance / bnbPrice).toFixed(4)
-                      : globalBalance.toFixed(2)}
+                      ? formatNumber(globalBalance / bnbPrice, 4)
+                      : formatNumber(globalBalance, 2)}
             </ThemedText>
             <TouchableOpacity style={styles.addFundsBtn} onPress={() => setAddFundsVisible(true)}>
               <ThemedText style={styles.addFundsText}>Add Funds</ThemedText>
             </TouchableOpacity>
           </View>
-          <ThemedText style={[styles.fiatAmount, { color: theme.tabIconDefault }]}>≈${globalBalance.toFixed(2)}</ThemedText>
+          <ThemedText style={[styles.fiatAmount, { color: theme.tabIconDefault }]}>≈${formatNumber(globalBalance, 2)}</ThemedText>
 
           <View style={styles.pnlRow}>
             <ThemedText style={[styles.pnlLabel, { color: theme.tabIconDefault }]}>Today's PNL </ThemedText>

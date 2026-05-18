@@ -35,12 +35,24 @@ export default function WithdrawCoinScreen() {
 
   const { balances } = usePortfolioStore();
   const currentBalance = balances.find(b => b.currency === currency)?.balance || 0;
-  const availableBalanceStr = currentBalance > 0 ? Number(currentBalance).toFixed(6) : '0.015'; // using mockup value if 0 or use actual
+  
+  const getDecimals = (c: string) => {
+    switch(c) {
+      case 'BTC': return 8;
+      case 'BNB': return 4;
+      case 'ETH': return 6;
+      case 'USDT': return 2;
+      default: return 6;
+    }
+  };
+  
+  const availableBalanceStr = Number(currentBalance).toFixed(getDecimals(currency));
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmModalVisible, setConfirmModalVisible] = useState(false);
   const [withdrawResult, setWithdrawResult] = useState<{ txId: string; message: string } | null>(null);
   const [skipVerification, setSkipVerification] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const handleWithdraw = async () => {
     if (!address || !network || !amount) {
@@ -345,12 +357,32 @@ export default function WithdrawCoinScreen() {
                 await Clipboard.setStringAsync(withdrawResult.txId);
               }
               setConfirmModalVisible(false);
+              setShowSuccessAlert(true);
+              setTimeout(() => {
+                setShowSuccessAlert(false);
+                router.push('/assets');
+              }, 2000);
             }}
           >
             <ThemedText style={svStyles.confirmBtnText}>Confirm</ThemedText>
           </TouchableOpacity>
         </View>
       </ActionBottomSheet>
+
+      {/* Success Alert Overlay */}
+      {showSuccessAlert && (
+        <View style={[styles.successOverlay, { backgroundColor: colorScheme === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)' }]}>
+          <View style={[styles.successCard, { backgroundColor: theme.surface }]}>
+            <View style={styles.successCircleWrapper}>
+              <View style={styles.successCircle}>
+                <Ionicons name="checkmark" size={36} color="#FFF" />
+              </View>
+            </View>
+            <ThemedText type="bold" style={[styles.successTitle, { color: theme.text }]}>Order Submitted</ThemedText>
+            <ThemedText style={[styles.successSubText, { color: theme.textSecondary }]}>Your withdrawal request has been submitted</ThemedText>
+          </View>
+        </View>
+      )}
 
     </SafeAreaView>
   );
@@ -498,6 +530,52 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
     lineHeight: 18,
+  },
+  successOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  successCard: {
+    paddingHorizontal: 40,
+    paddingVertical: 40,
+    borderRadius: 24,
+    alignItems: 'center',
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  successCircleWrapper: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
+    borderColor: '#0FC97B',
+    borderStyle: 'dotted',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  successCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#0FC97B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successTitle: {
+    fontSize: 20,
+    marginBottom: 12,
+  },
+  successSubText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

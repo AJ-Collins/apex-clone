@@ -27,6 +27,12 @@ export default function AssetsOverviewScreen() {
   const setSelectedCurrency = useCurrencyStore((state) => state.setSelectedCurrency);
   const { fetchGlobalBalance, fetchPortfolio } = usePortfolioStore();
 
+  const formatNumber = (num: number, decimals: number = 2) => {
+    const parts = num.toFixed(decimals).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  };
+
   const renderCryptoTab = () => (
     <View style={styles.cryptoTabContent}>
 
@@ -57,8 +63,8 @@ export default function AssetsOverviewScreen() {
             <ThemedText style={[styles.coinSubtitle, { color: theme.textSecondary }]}>BNB</ThemedText>
           </View>
           <View style={styles.coinBalance}>
-            <ThemedText type="bold" style={styles.coinAmount}>0.00001685</ThemedText>
-            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>0.00000014 {selectedCurrency}</ThemedText>
+            <ThemedText type="bold" style={styles.coinAmount}>{formatNumber(0.00001685, 8)}</ThemedText>
+            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>{formatNumber(0.00000014, 8)} {selectedCurrency}</ThemedText>
           </View>
         </View>
         <View style={styles.assetDetails}>
@@ -92,8 +98,8 @@ export default function AssetsOverviewScreen() {
             <ThemedText style={[styles.coinSubtitle, { color: theme.textSecondary }]}>OG</ThemedText>
           </View>
           <View style={styles.coinBalance}>
-            <ThemedText type="bold" style={styles.coinAmount}>0.015</ThemedText>
-            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>0.00000011 {selectedCurrency}</ThemedText>
+            <ThemedText type="bold" style={styles.coinAmount}>{formatNumber(0.015, 3)}</ThemedText>
+            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>{formatNumber(0.00000011, 8)} {selectedCurrency}</ThemedText>
           </View>
         </View>
         <View style={styles.assetDetails}>
@@ -118,10 +124,10 @@ export default function AssetsOverviewScreen() {
     <View style={styles.accountTabContent}>
 
       {[
-        { name: 'Earn', amount: `0.00000014 ${selectedCurrency}`, fiat: '≈$0.01' },
-        { name: 'Funding', amount: `0.00000011 ${selectedCurrency}`, fiat: '≈$0.01' },
-        { name: 'Spot', amount: `0.00 ${selectedCurrency}`, fiat: '' },
-        { name: 'Futures', amount: `0.00 ${selectedCurrency}`, fiat: '' },
+        { name: 'Earn', amount: `${formatNumber(0.00000014, 8)} ${selectedCurrency}`, fiat: `≈$${formatNumber(0.01, 2)}` },
+        { name: 'Funding', amount: `${formatNumber(0.00000011, 8)} ${selectedCurrency}`, fiat: `≈$${formatNumber(0.01, 2)}` },
+        { name: 'Spot', amount: `${formatNumber(0.00, 2)} ${selectedCurrency}`, fiat: '' },
+        { name: 'Futures', amount: `${formatNumber(0.00, 2)} ${selectedCurrency}`, fiat: '' },
       ].map((item) => (
         <View key={item.name} style={styles.accountItem}>
           <ThemedText style={styles.accountName}>{item.name}</ThemedText>
