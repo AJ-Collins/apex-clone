@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type CryptoCurrency = 'BTC' | 'ETH' | 'BNB' | 'USDT';
+export type CryptoCurrency = 'BTC' | 'ETH' | 'BNB' | 'USDT' | 'KSH';
 
 interface CurrencyState {
   selectedCurrency: CryptoCurrency;

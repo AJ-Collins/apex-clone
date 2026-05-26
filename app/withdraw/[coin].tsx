@@ -3,7 +3,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { api } from '@/lib/api';
-import { usePortfolioStore } from '@/store/portfolioStore';
+import { useAuthStore } from '@/store/authStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -33,8 +33,9 @@ export default function WithdrawCoinScreen() {
   const [network, setNetwork] = useState('');
   const [isNetworkModalVisible, setNetworkModalVisible] = useState(false);
 
-  const { balances } = usePortfolioStore();
-  const currentBalance = balances.find(b => b.currency === currency)?.balance || 0;
+  const { user } = useAuthStore();
+  const realAccount = user?.accounts?.find((a: any) => a.type === 'REAL');
+  const currentBalance = parseFloat(realAccount?.balance || '0');
   
   const getDecimals = (c: string) => {
     switch(c) {

@@ -7,7 +7,6 @@ import Animated, {
   Easing,
   Extrapolate,
   interpolate,
-  runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -421,7 +420,9 @@ export default function HomeScreen() {
                     ? formatNumber(globalBalance / ethPrice, 6)
                     : selectedCurrency === 'BNB'
                       ? formatNumber(globalBalance / bnbPrice, 4)
-                      : formatNumber(globalBalance, 2)}
+                      : selectedCurrency === 'KSH'
+                        ? formatNumber(globalBalance * 145, 2)
+                        : formatNumber(globalBalance, 2)}
             </ThemedText>
             <TouchableOpacity style={styles.addFundsBtn} onPress={() => setAddFundsVisible(true)}>
               <ThemedText style={styles.addFundsText}>Add Funds</ThemedText>

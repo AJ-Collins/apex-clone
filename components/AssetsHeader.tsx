@@ -14,6 +14,7 @@ const CURRENCIES: { id: CryptoCurrency; name: string }[] = [
   { id: 'ETH', name: 'ETH' },
   { id: 'BNB', name: 'BNB' },
   { id: 'USDT', name: 'USDT' },
+  { id: 'KSH', name: 'KSH' },
 ];
 
 const CATEGORIES = [
@@ -221,7 +222,9 @@ export function AssetsHeader() {
                               ? formatNumber(globalBalance / bnbPrice, 4)
                               : (selectedCurrency === 'ETH'
                                   ? formatNumber(globalBalance / ethPrice, 6)
-                                  : formatNumber(globalBalance, 2))))) 
+                                  : (selectedCurrency === 'KSH'
+                                      ? formatNumber(globalBalance * 145, 2)
+                                      : formatNumber(globalBalance, 2)))))) 
                   : '******** '}
               </ThemedText>
 

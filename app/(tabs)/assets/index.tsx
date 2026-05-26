@@ -1,3 +1,4 @@
+import { AssetsHeader } from '@/components/AssetsHeader';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -5,14 +6,15 @@ import { CryptoCurrency, useCurrencyStore } from '@/store/currencyStore';
 import { usePortfolioStore } from '@/store/portfolioStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { AssetsHeader } from '@/components/AssetsHeader';
+import { Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CURRENCIES: { label: CryptoCurrency; icon: string }[] = [
   { label: 'BTC', icon: 'bitcoin' },
   { label: 'ETH', icon: 'ethereum' },
   { label: 'BNB', icon: 'currency-btc' },
   { label: 'USDT', icon: 'currency-usd' },
+  { label: 'KSH', icon: 'cash' },
 ];
 
 export default function AssetsOverviewScreen() {
@@ -26,6 +28,7 @@ export default function AssetsOverviewScreen() {
   const selectedCurrency = useCurrencyStore((state) => state.selectedCurrency);
   const setSelectedCurrency = useCurrencyStore((state) => state.setSelectedCurrency);
   const { fetchGlobalBalance, fetchPortfolio } = usePortfolioStore();
+  const insets = useSafeAreaInsets();
 
   const formatNumber = (num: number, decimals: number = 2) => {
     const parts = num.toFixed(decimals).split('.');
@@ -217,50 +220,58 @@ export default function AssetsOverviewScreen() {
         animationType="fade"
         onRequestClose={() => setDropdownVisible(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setDropdownVisible(false)}>
-          <View style={[styles.dropdownSheet, { backgroundColor: theme.surface }]}>
-            <View style={styles.dropdownHandle} />
-            <ThemedText style={[styles.dropdownTitle, { color: theme.text }]}>
-              Select Currency
-            </ThemedText>
-            {CURRENCIES.map((c) => {
-              const isSelected = selectedCurrency === c.label;
-              return (
-                <TouchableOpacity
-                  key={c.label}
-                  style={[
-                    styles.dropdownItem,
-                    isSelected && { backgroundColor: theme.surfaceHighlight },
-                  ]}
-                  onPress={() => {
-                    setSelectedCurrency(c.label);
-                    setDropdownVisible(false);
-                  }}
-                >
-                  <View style={[styles.currencyIconWrap, { backgroundColor: theme.surfaceHighlight }]}>
-                    <MaterialCommunityIcons
-                      name={c.icon as any}
-                      size={18}
-                      color={isSelected ? theme.yellow : theme.textSecondary}
-                    />
-                  </View>
-                  <ThemedText
-                    style={[
-                      styles.dropdownItemText,
-                      { color: isSelected ? theme.text : theme.textSecondary },
-                      isSelected && { fontWeight: '700' },
-                    ]}
-                  >
-                    {c.label}
-                  </ThemedText>
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={18} color={theme.yellow} style={{ marginLeft: 'auto' }} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+        <TouchableWithoutFeedback onPress={() => setDropdownVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View 
+                style={[styles.dropdownSheet, { backgroundColor: theme.surface, paddingBottom: Math.max(insets.bottom + 20, 36) }]}
+              >
+                <View style={styles.dropdownHandle} />
+                <ThemedText style={[styles.dropdownTitle, { color: theme.text }]}>
+                  Select Currency
+                </ThemedText>
+                <View>
+                  {CURRENCIES.map((c) => {
+                    const isSelected = selectedCurrency === c.label;
+                    return (
+                      <TouchableOpacity
+                        key={c.label}
+                        style={[
+                          styles.dropdownItem,
+                          isSelected && { backgroundColor: theme.surfaceHighlight },
+                        ]}
+                        onPress={() => {
+                          setSelectedCurrency(c.label);
+                          setDropdownVisible(false);
+                        }}
+                      >
+                        <View style={[styles.currencyIconWrap, { backgroundColor: theme.surfaceHighlight }]}>
+                          <MaterialCommunityIcons
+                            name={c.icon as any}
+                            size={18}
+                            color={isSelected ? theme.yellow : theme.textSecondary}
+                          />
+                        </View>
+                        <ThemedText
+                          style={[
+                            styles.dropdownItemText,
+                            { color: isSelected ? theme.text : theme.textSecondary },
+                            isSelected && { fontWeight: '700' },
+                          ]}
+                        >
+                          {c.label}
+                        </ThemedText>
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={18} color={theme.yellow} style={{ marginLeft: 'auto' }} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </Pressable>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
