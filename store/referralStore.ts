@@ -28,7 +28,7 @@ export const useReferralStore = create<ReferralState>((set) => ({
 
   fetchReferrals: async () => {
     set({ loading: true, error: null });
-    const res = await api.get('/api/special/referral');
+    const res = await api.get('/api/marketer/referral');
     if (res.success) {
       set({ data: res.data, loading: false });
     } else {

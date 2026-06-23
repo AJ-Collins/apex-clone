@@ -12,7 +12,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   loading: false,
   fetchTransactions: async () => {
     set({ loading: true });
-    const response = await api.get('/api/special/transactions');
+    const response = await api.get('/api/marketer/transactions');
     if (response.success) {
       set({ transactions: response.data.transactions, loading: false });
     } else {

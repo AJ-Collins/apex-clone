@@ -38,7 +38,7 @@ export const useDepositStore = create<DepositState>((set) => ({
 
   getAddress: async (currency: string) => {
     set({ loading: true, error: null, address: null });
-    const res = await api.post('/api/special/deposit/initiate', { currency });
+    const res = await api.post('/api/marketer/deposit/initiate', { currency });
     if (res.success) {
       set({ address: res.data, loading: false });
     } else {
@@ -48,7 +48,7 @@ export const useDepositStore = create<DepositState>((set) => ({
 
   confirmDeposit: async (payload) => {
     set({ submitting: true, error: null });
-    const res = await api.post('/api/special/deposit/confirm', payload);
+    const res = await api.post('/api/marketer/deposit/confirm', payload);
     set({ submitting: false });
     if (!res.success) {
       set({ error: res.error || 'Failed to submit deposit' });
@@ -59,7 +59,7 @@ export const useDepositStore = create<DepositState>((set) => ({
 
   fetchHistory: async () => {
     set({ loading: true });
-    const res = await api.get('/api/special/deposit/history');
+    const res = await api.get('/api/marketer/deposit/history');
     if (res.success) {
       set({ history: res.data?.deposits || [], loading: false });
     } else {

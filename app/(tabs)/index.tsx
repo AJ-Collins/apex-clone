@@ -413,7 +413,7 @@ export default function HomeScreen() {
           <View style={styles.balMid}>
             <ThemedText style={[styles.balAmount, { color: theme.text }]}>
               {selectedCurrency === 'USDT'
-                ? formatNumber(globalBalance, 2)
+                ? `$${formatNumber(globalBalance, 2)}`
                 : selectedCurrency === 'BTC'
                   ? formatNumber(globalBalance / btcPrice, 8)
                   : selectedCurrency === 'ETH'

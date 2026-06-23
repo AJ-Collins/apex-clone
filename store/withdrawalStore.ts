@@ -35,7 +35,7 @@ export const useWithdrawalStore = create<WithdrawalState>((set) => ({
 
   requestWithdrawal: async (payload) => {
     set({ submitting: true, error: null });
-    const res = await api.post('/api/special/withdrawal/request', payload);
+    const res = await api.post('/api/marketer/withdrawal/request', payload);
     set({ submitting: false });
     if (!res.success) {
       set({ error: res.error || 'Withdrawal request failed' });
@@ -46,7 +46,7 @@ export const useWithdrawalStore = create<WithdrawalState>((set) => ({
 
   fetchHistory: async () => {
     set({ loading: true });
-    const res = await api.get('/api/special/withdrawal/history');
+    const res = await api.get('/api/marketer/withdrawal/history');
     if (res.success) {
       set({ history: res.data?.withdrawals || [], loading: false });
     } else {

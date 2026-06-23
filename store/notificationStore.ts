@@ -15,7 +15,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   loading: false,
   fetchNotifications: async () => {
     set({ loading: true });
-    const response = await api.get('/api/special/notifications');
+    const response = await api.get('/api/marketer/notifications');
     if (response.success) {
       set({ 
         notifications: response.data.notifications, 
@@ -27,7 +27,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
   },
   markAsRead: async (id) => {
-    const response = await api.post(`/api/special/notifications/read/${id}`, {});
+    const response = await api.post(`/api/marketer/notifications/read/${id}`, {});
     if (response.success) {
       const { notifications, unreadCount } = get();
       set({

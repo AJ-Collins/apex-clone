@@ -1,13 +1,13 @@
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { CryptoCurrency, useCurrencyStore } from '@/store/currencyStore';
+import { usePortfolioStore } from '@/store/portfolioStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ActionBottomSheet } from './ActionBottomSheet';
-import { usePortfolioStore } from '@/store/portfolioStore';
-import { CryptoCurrency, useCurrencyStore } from '@/store/currencyStore';
 
 const CURRENCIES: { id: CryptoCurrency; name: string }[] = [
   { id: 'BTC', name: 'BTC' },
@@ -215,7 +215,7 @@ export function AssetsHeader() {
               <ThemedText type="bold" style={styles.mainBalance}>
                 {isBalanceVisible 
                   ? (selectedCurrency === 'USDT' 
-                      ? formatNumber(globalBalance, 2) 
+                      ? `$${formatNumber(globalBalance, 2)}`
                       : (selectedCurrency === 'BTC' 
                           ? formatNumber(globalBalance / btcPrice, 8) 
                           : (selectedCurrency === 'BNB' 

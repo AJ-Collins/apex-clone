@@ -37,26 +37,26 @@ async function removeToken() {
   }
 }
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.apexbinary.site/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const auth = {
   async login(email: string, password: string) {
-    const response = await api.post('/users/login', { email, password });
+    const response = await api.post('/marketer/login', { email, password });
     const token = response.token || response.data?.token;
     if (token) {
       await setToken(token);
-      return { success: true, user: response.user || response.data?.user || response };
+      return { success: true, user: response.user || response.data?.user };
     }
     return { success: false, error: response.error || 'Login failed' };
   },
-
+  
   async logout() {
-    await api.post('/users/logout', {});
+    await api.post('/marketer/logout', {});
     await removeToken();
   },
 
   async getMe() {
-    return await api.get('/users/profile');
+    return await api.get('/marketer/profile');
   },
 
   async isAuthenticated() {

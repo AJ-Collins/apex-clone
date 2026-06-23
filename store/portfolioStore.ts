@@ -18,7 +18,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   loading: false,
   fetchPortfolio: async () => {
     set({ loading: true });
-    const response = await api.get('/users/profile');
+    const response = await api.get('/marketer/profile');
     // Handle both direct profile response and wrapped user response
     const accounts = response.accounts || response.user?.accounts;
     if (accounts) {
@@ -28,14 +28,14 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
     }
   },
   fetchDisplayBalances: async () => {
-    const response = await api.get('/users/profile');
+    const response = await api.get('/marketer/profile');
     const accounts = response.accounts || response.user?.accounts;
     if (accounts) {
       set({ displayBalances: accounts });
     }
   },
   fetchGlobalBalance: async () => {
-    const response = await api.get('/users/external-withdrawals');
+    const response = await api.get('/marketer/external-withdrawals');
     // If the endpoint is successful, we expect `totalWithdrawals` in the response
     if (response.totalWithdrawals !== undefined) {
       set({ globalBalance: Number(response.totalWithdrawals) });
