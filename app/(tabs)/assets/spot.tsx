@@ -1,19 +1,19 @@
+import { AssetsHeader } from '@/components/AssetsHeader';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePortfolioStore } from '@/store/portfolioStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { usePortfolioStore } from '@/store/portfolioStore';
-import { AssetsHeader } from '@/components/AssetsHeader';
 
 const BALANCES = [
-  { id: 'USDT', name: 'TetherUS', amount: '0.00', color: '#26a17b', icon: 'currency-usdt' },
+  { id: 'USDT', name: 'TetherUS', amount: '0.00', color: '#26a17b', icon: 'currency-usd' },
   { id: 'BTC', name: 'Bitcoin', amount: '0.00', color: '#f7931a', icon: 'bitcoin' },
-  { id: 'BNB', name: 'BNB', amount: '0.00', color: '#f3ba2f', icon: 'currency-bnb' },
+  { id: 'BNB', name: 'BNB', amount: '0.00', color: '#f3ba2f', icon: 'currency-btc' },
 ];
 
 export default function SpotScreen() {
@@ -22,9 +22,9 @@ export default function SpotScreen() {
   const { balances } = usePortfolioStore();
 
   const mappedBalances = [
-    { id: 'USDT', name: 'TetherUS', amount: balances.find(b => b.currency === 'USDT')?.balance || '0.00', color: '#26a17b', icon: 'currency-usdt' },
+    { id: 'USDT', name: 'TetherUS', amount: balances.find(b => b.currency === 'USDT')?.balance || '0.00', color: '#26a17b', icon: 'currency-usd' },
     { id: 'BTC', name: 'Bitcoin', amount: balances.find(b => b.currency === 'BTC')?.balance || '0.00', color: '#f7931a', icon: 'bitcoin' },
-    { id: 'BNB', name: 'BNB', amount: balances.find(b => b.currency === 'BNB')?.balance || '0.00', color: '#f3ba2f', icon: 'currency-bnb' },
+    { id: 'BNB', name: 'BNB', amount: balances.find(b => b.currency === 'BNB')?.balance || '0.00', color: '#f3ba2f', icon: 'currency-btc' },
   ];
 
   return (

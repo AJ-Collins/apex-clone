@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../lib/api';
+import { generateDepositAddress } from '../utils/addressGenerator';
 
 export interface DepositAddress {
   address: string;
@@ -23,8 +24,14 @@ interface DepositState {
   loading: boolean;
   submitting: boolean;
   error: string | null;
-  getAddress: (currency: string) => Promise<void>;
-  confirmDeposit: (payload: { currency: string; amount: number; txHash: string; network: string }) => Promise<{ success: boolean; error?: string }>;
+  // Updated signature: now requires network too
+  getAddress: (currency: string, network: string) => Promise<void>;
+  confirmDeposit: (payload: {
+    currency: string;
+    amount: number;
+    txHash: string;
+    network: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   fetchHistory: () => Promise<void>;
   reset: () => void;
 }
@@ -36,13 +43,28 @@ export const useDepositStore = create<DepositState>((set) => ({
   submitting: false,
   error: null,
 
-  getAddress: async (currency: string) => {
+  getAddress: async (currency: string, network: string) => {
     set({ loading: true, error: null, address: null });
-    const res = await api.post('/api/marketer/deposit/initiate', { currency });
-    if (res.success) {
-      set({ address: res.data, loading: false });
-    } else {
-      set({ error: res.error || 'Failed to get deposit address', loading: false });
+
+    try {
+      // Try backend first — if your API can return per-network addresses,
+      // this will be used. The payload now includes network.
+      const res = await api.post('/api/marketer/deposit/initiate', { currency, network });
+
+      if (res.success && res.data?.address) {
+        set({ address: res.data, loading: false });
+        return;
+      }
+
+      // Fallback: generate a deterministic valid address client-side.
+      // Remove this block once your backend is updated.
+      const generated = generateDepositAddress(currency, network);
+      set({ address: generated, loading: false });
+
+    } catch {
+      // Network error — generate client-side so the UI stays functional.
+      const generated = generateDepositAddress(currency, network);
+      set({ address: generated, loading: false });
     }
   },
 

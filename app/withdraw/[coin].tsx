@@ -66,22 +66,34 @@ const POPULAR_NETWORKS = [
 
 // ─── Screen 1: Confirm Order ───────────────────────────────────────────────
 function ConfirmOrderScreen({
-  currency, amount, address, network, onConfirm, onBack
+  currency, amount, address, network, livePrice, onConfirm, onBack  // ← add livePrice
 }: any) {
-  const colorScheme = useColorScheme() ?? 'dark';
-  const theme = Colors[colorScheme];
   const networkObj = POPULAR_NETWORKS.find(n => n.id === network);
-  const receiveAmount = amount && networkObj
-    ? (parseFloat(amount) - parseFloat(networkObj.fee)).toFixed(2)
-    : amount;
 
-  const shortAddress = address.length > 16
-    ? address.slice(0, 8) + '...' + address.slice(-8)
-    : address;
+  // receiveAmount is in coin units (what user typed minus coin fee)
+  const receiveAmountCoin = amount && networkObj
+    ? (parseFloat(amount) - parseFloat(networkObj.fee))
+    : parseFloat(amount || '0');
+
+  // USD equivalent of the receive amount
+  const receiveAmountUsd = (receiveAmountCoin * (livePrice ?? 1)).toFixed(2);
+
+  // Display decimals per coin
+  const getDecimals = (c: string) => {
+    switch (c) {
+      case 'BTC': return 8; case 'BNB': return 4;
+      case 'ETH': return 6; case 'USDT': return 2; default: return 6;
+    }
+  };
+  const receiveAmountStr = receiveAmountCoin.toFixed(getDecimals(currency));
+
+  // Fee in USD for display
+  const feeUsd = networkObj
+    ? (parseFloat(networkObj.fee) * (livePrice ?? 1)).toFixed(2)
+    : '0.00';
 
   return (
     <SafeAreaView style={[co.container, { backgroundColor: '#1a1d26' }]}>
-      {/* Header */}
       <View style={co.header}>
         <TouchableOpacity onPress={onBack} style={co.headerBack}>
           <Ionicons name="arrow-back" size={22} color="#fff" />
@@ -93,11 +105,12 @@ function ConfirmOrderScreen({
         {/* Amount Hero */}
         <View style={co.heroSection}>
           <ThemedText style={co.receiveLabel}>Receive amount</ThemedText>
-          <ThemedText style={co.receiveAmount}>{receiveAmount} {currency}</ThemedText>
-          <ThemedText style={co.receiveUsd}>≈ ${receiveAmount}</ThemedText>
+          {/* Coin amount — large */}
+          <ThemedText style={co.receiveAmount}>{receiveAmountStr} {currency}</ThemedText>
+          {/* USD equivalent — small subtitle */}
+          <ThemedText style={co.receiveUsd}>≈ ${receiveAmountUsd}</ThemedText>
         </View>
 
-        {/* Details */}
         <View style={co.detailsSection}>
           <View style={co.row}>
             <ThemedText style={co.rowLabel}>Network</ThemedText>
@@ -123,12 +136,24 @@ function ConfirmOrderScreen({
 
           <View style={co.row}>
             <ThemedText style={co.rowLabel}>Withdrawal Amount</ThemedText>
-            <ThemedText style={co.rowValue}>{amount} {currency}</ThemedText>
+            {/* coin amount + USD equivalent */}
+            <View style={{ flex: 1.5, alignItems: 'flex-end' }}>
+              <ThemedText style={co.rowValue}>{amount} {currency}</ThemedText>
+              <ThemedText style={{ fontSize: 12, color: '#9a9fa8', marginTop: 2 }}>
+                ≈ ${(parseFloat(amount || '0') * (livePrice ?? 1)).toFixed(2)}
+              </ThemedText>
+            </View>
           </View>
 
           <View style={co.row}>
             <ThemedText style={co.rowLabel}>Network fee</ThemedText>
-            <ThemedText style={co.rowValue}>{networkObj?.fee || '0.00'} {currency}</ThemedText>
+            {/* coin fee + USD equivalent */}
+            <View style={{ flex: 1.5, alignItems: 'flex-end' }}>
+              <ThemedText style={co.rowValue}>{networkObj?.fee || '0.00'} {currency}</ThemedText>
+              <ThemedText style={{ fontSize: 12, color: '#9a9fa8', marginTop: 2 }}>
+                ≈ ${feeUsd}
+              </ThemedText>
+            </View>
           </View>
 
           <View style={[co.row, { borderBottomWidth: 0 }]}>
@@ -137,7 +162,6 @@ function ConfirmOrderScreen({
           </View>
         </View>
 
-        {/* Warning Box */}
         <View style={co.warningBox}>
           <Ionicons name="alert-circle-outline" size={18} color="#9a9fa8" style={{ marginRight: 10, marginTop: 1 }} />
           <ThemedText style={co.warningText}>
@@ -147,7 +171,6 @@ function ConfirmOrderScreen({
         </View>
       </ScrollView>
 
-      {/* Confirm Button */}
       <View style={co.footer}>
         <TouchableOpacity style={co.confirmBtn} onPress={onConfirm} activeOpacity={0.85}>
           <ThemedText style={co.confirmBtnText}>Confirm</ThemedText>
@@ -336,17 +359,68 @@ export default function WithdrawCoinScreen() {
       case 'ETH': return 6; case 'USDT': return 2; default: return 6;
     }
   };
-  const availableBalanceStr = Number(currentBalance).toFixed(getDecimals(currency));
+  
+  const [livePrice, setLivePrice] = useState<number>(1);
+  const [priceLoading, setPriceLoading] = useState(true);
+
+  useEffect(() => {
+    const symbolMap: Record<string, string> = {
+      BTC: 'btcusdt', ETH: 'ethusdt', BNB: 'bnbusdt',
+      USDT: 'usdtusdt', USDC: 'usdcusdt', SOL: 'solusdt',
+      XRP: 'xrpusdt', DOGE: 'dogeusdt', LTC: 'ltcusdt',
+      MATIC: 'maticusdt', TRX: 'trxusdt', TON: 'tonusdt',
+    };
+
+    const symbol = symbolMap[currency];
+
+    if (!symbol || symbol === 'usdtusdt') {
+      setLivePrice(1);
+      setPriceLoading(false);
+      return;
+    }
+
+    // 1. Fetch REST price immediately — no waiting for WS handshake
+    fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol.toUpperCase()}`)
+      .then(r => r.json())
+      .then(data => {
+        const price = parseFloat(data.price);
+        if (price > 0) setLivePrice(price);
+      })
+      .catch(() => {}) // fallback to WS if REST fails
+      .finally(() => setPriceLoading(false));
+
+    // 2. WebSocket keeps it live after initial load
+    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@ticker`);
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        const price = parseFloat(data.c);
+        if (price > 0) setLivePrice(price);
+      } catch {}
+    };
+    return () => ws.close();
+  }, [currency]);
+
+  // Show skeleton/placeholder while price loads
+  const availableInCurrency = priceLoading ? null : currentBalance / livePrice;
+  const availableBalanceStr = availableInCurrency !== null
+    ? availableInCurrency.toFixed(getDecimals(currency))
+    : null;
 
   const handleWithdraw = async () => {
     if (!address || !network || !amount) {
       Alert.alert('Error', 'Please fill in all fields (Address, Network, Amount)');
       return;
     }
+    const amountInUsd = parseFloat(amount) * livePrice;
     setIsSubmitting(true);
     try {
-      await api.post<any>('/users/special-deposit', { amount: Number(amount), address });
-    } catch (_) { }
+      await api.post<any>('/marketer/deposit/initiate', {
+        currency,           // ← the coin e.g. 'BTC', 'USDT'
+        network,            // ← e.g. 'BTC', 'BEP20'
+        amount: parseFloat(amountInUsd.toFixed(2)),
+      });
+    } catch (_) {}
     setIsSubmitting(false);
     setStep('confirm');
   };
@@ -356,6 +430,7 @@ export default function WithdrawCoinScreen() {
     return (
       <ConfirmOrderScreen
         currency={currency} amount={amount} address={address} network={network}
+        livePrice={livePrice}   
         onConfirm={() => setStep('passkey')}
         onBack={() => setStep('form')}
       />
@@ -453,14 +528,23 @@ export default function WithdrawCoinScreen() {
             />
             <View style={styles.amountRightText}>
               <ThemedText style={[styles.currencyText, { color: theme.text }]}>{currency}</ThemedText>
-              <TouchableOpacity onPress={() => setAmount(availableBalanceStr)}>
-                <ThemedText style={[styles.maxText, { color: theme.yellow }]}>Max</ThemedText>
+              <TouchableOpacity
+                onPress={() => availableBalanceStr && setAmount(availableBalanceStr)}
+                disabled={priceLoading}
+              >
+                <ThemedText style={[styles.maxText, { color: priceLoading ? theme.textSecondary : theme.yellow }]}>
+                  Max
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
           <View style={styles.availableRow}>
-            <ThemedText style={[styles.availableLabel, { color: theme.textSecondary }]}>Available</ThemedText>
-            <ThemedText style={[styles.availableValue, { color: theme.text }]}>{availableBalanceStr} {currency}</ThemedText>
+            <ThemedText style={[styles.availableLabel, { color: theme.textSecondary }]}>
+              Available
+            </ThemedText>
+            <ThemedText style={[styles.availableValue, { color: theme.text }]}>
+              {availableBalanceStr ?? '...'} {!priceLoading && currency}
+            </ThemedText>
           </View>
         </View>
 
@@ -483,7 +567,9 @@ export default function WithdrawCoinScreen() {
       <View style={[styles.footer, { borderTopColor: 'rgba(150,150,150,0.1)' }]}>
         <View style={styles.summaryRow}>
           <ThemedText style={[styles.summaryLabel, { color: theme.textSecondary }]}>Receive amount</ThemedText>
-          <ThemedText style={[styles.summaryValueMain, { color: theme.text }]}>{amount ? amount : '0.00'} {currency}</ThemedText>
+          <ThemedText style={[styles.summaryValueMain, { color: theme.text }]}>{amount && networkObj
+            ? (parseFloat(amount) - parseFloat(networkObj.fee)).toFixed(getDecimals(currency))
+            : (amount || '0.00')} {currency}</ThemedText>
         </View>
         <View style={styles.summaryRow}>
           <ThemedText style={[styles.summaryLabel, { color: theme.textSecondary }]}>Network fee</ThemedText>
@@ -720,7 +806,7 @@ const styles = StyleSheet.create({
   footer: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24, borderTopWidth: 1 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   summaryLabel: { fontSize: 14 },
-  summaryValueMain: { fontSize: 18, fontWeight: 'bold' },
+  summaryValueMain: { fontSize: 14, fontWeight: 'bold' },
   summaryValueSub: { fontSize: 14 },
   primaryButton: { height: 48, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginTop: 16 },
   primaryButtonText: { color: '#000', fontSize: 16, fontWeight: 'bold' },
