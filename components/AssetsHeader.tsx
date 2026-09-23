@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { CryptoCurrency, useCurrencyStore } from '@/store/currencyStore';
+import { useLivePriceConnection, useLivePricesStore } from '@/store/livePricesStore';
 import { usePortfolioStore } from '@/store/portfolioStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
@@ -14,7 +15,7 @@ const CURRENCIES: { id: CryptoCurrency; name: string }[] = [
   { id: 'ETH', name: 'ETH' },
   { id: 'BNB', name: 'BNB' },
   { id: 'USDT', name: 'USDT' },
-  { id: 'KSH', name: 'KSH' },
+  { id: 'KES', name: 'KES' },
 ];
 
 const CATEGORIES = [
@@ -33,17 +34,27 @@ export function AssetsHeader() {
 
   const { globalBalance } = usePortfolioStore();
 
-  const selectedCurrency = useCurrencyStore((state) => state.selectedCurrency);
-  const setSelectedCurrency = useCurrencyStore((state) => state.setSelectedCurrency);
-  const [btcPrice, setBtcPrice] = useState(60000);
-  const [bnbPrice, setBnbPrice] = useState(616.39);
-  const [ethPrice, setEthPrice] = useState(3200);
-  const [pnl, setPnl] = useState({ usd: '$0.00', percent: '0.00%', isPositive: true });
+  const { selectedCurrency, setSelectedCurrency, kshRate } = useCurrencyStore((state) => state);
 
   const formatNumber = (num: number, decimals: number = 2) => {
     const parts = num.toFixed(decimals).split('.');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return parts.join('.');
+  };
+
+  useLivePriceConnection();
+  const prices = useLivePricesStore((s) => s.prices);
+
+  const btcPrice = prices['btcusdt']?.price ?? 60000;
+  const bnbPrice = prices['bnbusdt']?.price ?? 616.39;
+  const ethPrice = prices['ethusdt']?.price ?? 3200;
+
+  const bnbChangePercent = prices['bnbusdt']?.changePercent ?? 0;
+  const pnlUsd = globalBalance * (bnbChangePercent / 100);
+  const pnl = {
+    usd: `${pnlUsd >= 0 ? '+' : '-'}$${formatNumber(Math.abs(pnlUsd), 2)}`,
+    percent: `${bnbChangePercent >= 0 ? '+' : ''}${bnbChangePercent.toFixed(2)}%`,
+    isPositive: bnbChangePercent >= 0,
   };
 
   const SPOT_SUB_TABS = ['Spot', 'Cross Margin', 'Isolated Margin'];
@@ -52,33 +63,6 @@ export function AssetsHeader() {
   const [isDepositVisible, setDepositVisible] = useState(false);
   const [isWithdrawVisible, setWithdrawVisible] = useState(false);
   const [activeSpotTab, setActiveSpotTab] = useState('Spot');
-
-  useState(() => {
-    // Initial fetch handled by parent/store usually
-  });
-
-  useState(() => {
-    const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker/bnbusdt@ticker/ethusdt@ticker');
-    ws.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        const price = parseFloat(data.c);
-        if (data.s === 'BTCUSDT') setBtcPrice(price);
-        if (data.s === 'ETHUSDT') setEthPrice(price);
-        if (data.s === 'BNBUSDT') {
-          setBnbPrice(price);
-          const priceChange = parseFloat(data.P);
-          const pnlUsd = (globalBalance * (priceChange / 100));
-          setPnl({
-            usd: `${pnlUsd >= 0 ? '+' : '-'}$${formatNumber(Math.abs(pnlUsd), 2)}`,
-            percent: `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%`,
-            isPositive: priceChange >= 0
-          });
-        }
-      } catch (err) {}
-    };
-    return () => ws.close();
-  });
 
   const activeCategory =
     CATEGORIES.find(c => c.path === pathname)?.name || 'Overview';
@@ -213,22 +197,22 @@ export function AssetsHeader() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
               <ThemedText type="bold" style={styles.mainBalance}>
-                {isBalanceVisible 
-                  ? (selectedCurrency === 'USDT' 
-                      ? `$${formatNumber(globalBalance, 2)}`
-                      : (selectedCurrency === 'BTC' 
-                          ? formatNumber(globalBalance / btcPrice, 8) 
-                          : (selectedCurrency === 'BNB' 
-                              ? formatNumber(globalBalance / bnbPrice, 4)
-                              : (selectedCurrency === 'ETH'
-                                  ? formatNumber(globalBalance / ethPrice, 6)
-                                  : (selectedCurrency === 'KSH'
-                                      ? formatNumber(globalBalance * 145, 2)
-                                      : formatNumber(globalBalance, 2)))))) 
+                {isBalanceVisible
+                  ? (selectedCurrency === 'USDT'
+                    ? `$${formatNumber(globalBalance, 2)}`
+                    : (selectedCurrency === 'BTC'
+                      ? formatNumber(globalBalance / btcPrice, 8)
+                      : (selectedCurrency === 'BNB'
+                        ? formatNumber(globalBalance / bnbPrice, 4)
+                        : (selectedCurrency === 'ETH'
+                          ? formatNumber(globalBalance / ethPrice, 6)
+                          : (selectedCurrency === 'KES'
+                            ? `KSh ${formatNumber(globalBalance * kshRate, 2)}`
+                            : formatNumber(globalBalance, 2))))))
                   : '******** '}
               </ThemedText>
 
-              <ThemedText style={styles.currencyCode}>
+              <ThemedText type='bold' style={styles.currencyCode}>
                 {selectedCurrency}
               </ThemedText>
             </View>
@@ -433,7 +417,7 @@ const styles = StyleSheet.create({
   },
 
   mainBalance: {
-    fontSize: 34,
+    fontSize: 32,
     lineHeight: 42,
   },
 

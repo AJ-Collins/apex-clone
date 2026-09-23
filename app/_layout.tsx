@@ -3,7 +3,19 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
+
+// Configure notifications to show alerts when the app is foregrounded
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 import {
   useFonts,
   Inter_400Regular,
@@ -39,6 +51,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     checkAuth();
+    // Request notification permissions
+    Notifications.requestPermissionsAsync();
   }, []);
 
   useEffect(() => {

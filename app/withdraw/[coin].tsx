@@ -2,43 +2,48 @@ import { ActionBottomSheet } from '@/components/ActionBottomSheet';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
+
+import { useCurrencyStore } from '@/store/currencyStore';
+import { usePortfolioStore } from '@/store/portfolioStore';
+import { useWithdrawalStore } from '@/store/withdrawalStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as Notifications from 'expo-notifications';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert, Animated, Dimensions, Easing, Image, ScrollView, StyleSheet,
+  Alert, Animated, Dimensions,
+  Image, ScrollView, StyleSheet, Text,
   TextInput, TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Svg, { Path, Rect } from 'react-native-svg';
 
-// ─── BinanceShieldIcon component ───
-function BinanceShieldIcon({ size = 18 }: { size?: number }) {
+// BinanceShieldIcon component
+function BinanceShieldIcon({ size = 18, theme }: { size?: number, theme: any }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
       {/* Shield outer shape */}
       <Path
         d="M50 5 L90 20 L90 55 C90 75 72 90 50 97 C28 90 10 75 10 55 L10 20 Z"
-        fill="#2B3139"
-        stroke="#9a9fa8"
+        fill={theme.surface}
+        stroke={theme.textSecondary}
         strokeWidth="3"
       />
       {/* Inner shield */}
       <Path
         d="M50 15 L82 27 L82 55 C82 71 67 84 50 90 C33 84 18 71 18 55 L18 27 Z"
-        fill="#1a1d26"
-        stroke="#9a9fa8"
+        fill={theme.background}
+        stroke={theme.textSecondary}
         strokeWidth="1.5"
       />
       {/* Lock body */}
-      <Rect x="35" y="52" width="30" height="22" rx="3" fill="#9a9fa8" />
+      <Rect x="35" y="52" width="30" height="22" rx="3" fill={theme.textSecondary} />
       {/* Lock shackle */}
       <Path
         d="M40 52 L40 44 C40 37 60 37 60 44 L60 52"
-        stroke="#9a9fa8"
+        stroke={theme.textSecondary}
         strokeWidth="5"
         strokeLinecap="round"
         fill="none"
@@ -46,7 +51,7 @@ function BinanceShieldIcon({ size = 18 }: { size?: number }) {
       {/* Keyhole */}
       <Path
         d="M50 58 C52.8 58 55 60.2 55 63 C55 65.1 53.7 66.9 52 67.6 L53 72 L47 72 L48 67.6 C46.3 66.9 45 65.1 45 63 C45 60.2 47.2 58 50 58 Z"
-        fill="#1a1d26"
+        fill={theme.background}
       />
     </Svg>
   );
@@ -64,10 +69,12 @@ const POPULAR_NETWORKS = [
   { id: 'Arbitrum', name: 'Arbitrum One', fee: '0.90', time: '≈ 3 mins' },
 ];
 
-// ─── Screen 1: Confirm Order ───────────────────────────────────────────────
 function ConfirmOrderScreen({
   currency, amount, address, network, livePrice, onConfirm, onBack  // ← add livePrice
 }: any) {
+  const colorScheme = useColorScheme() ?? 'dark';
+  const theme = Colors[colorScheme];
+  const co = getCoStyles(theme);
   const networkObj = POPULAR_NETWORKS.find(n => n.id === network);
 
   // receiveAmount is in coin units (what user typed minus coin fee)
@@ -93,12 +100,13 @@ function ConfirmOrderScreen({
     : '0.00';
 
   return (
-    <SafeAreaView style={[co.container, { backgroundColor: '#1a1d26' }]}>
+    <SafeAreaView style={[co.container, { backgroundColor: theme.background }]}>
       <View style={co.header}>
         <TouchableOpacity onPress={onBack} style={co.headerBack}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+          <Ionicons name="arrow-back" size={22} color={theme.text} />
         </TouchableOpacity>
         <ThemedText style={co.headerTitle}>Confirm order</ThemedText>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={co.content} showsVerticalScrollIndicator={false}>
@@ -123,12 +131,12 @@ function ConfirmOrderScreen({
               <ThemedText style={[co.rowValue, { flexWrap: 'wrap', textAlign: 'right' }]} numberOfLines={0}>
                 {address.length > 20 ? (
                   <>
-                    <ThemedText style={{ color: '#F5C518' }}>{address.slice(0, 4)}</ThemedText>
-                    <ThemedText style={{ color: '#fff' }}>{address.slice(4, -8)}</ThemedText>
-                    <ThemedText style={{ color: '#F5C518' }}>{address.slice(-8)}</ThemedText>
+                    <ThemedText style={{ color: theme.yellow }}>{address.slice(0, 4)}</ThemedText>
+                    <ThemedText style={{ color: theme.text }}>{address.slice(4, -8)}</ThemedText>
+                    <ThemedText style={{ color: theme.yellow }}>{address.slice(-8)}</ThemedText>
                   </>
                 ) : (
-                  <ThemedText style={{ color: '#fff' }}>{address}</ThemedText>
+                  <ThemedText style={{ color: theme.text }}>{address}</ThemedText>
                 )}
               </ThemedText>
             </View>
@@ -139,7 +147,7 @@ function ConfirmOrderScreen({
             {/* coin amount + USD equivalent */}
             <View style={{ flex: 1.5, alignItems: 'flex-end' }}>
               <ThemedText style={co.rowValue}>{amount} {currency}</ThemedText>
-              <ThemedText style={{ fontSize: 12, color: '#9a9fa8', marginTop: 2 }}>
+              <ThemedText style={{ fontSize: 12, color: theme.textSecondary, marginTop: 2 }}>
                 ≈ ${(parseFloat(amount || '0') * (livePrice ?? 1)).toFixed(2)}
               </ThemedText>
             </View>
@@ -150,7 +158,7 @@ function ConfirmOrderScreen({
             {/* coin fee + USD equivalent */}
             <View style={{ flex: 1.5, alignItems: 'flex-end' }}>
               <ThemedText style={co.rowValue}>{networkObj?.fee || '0.00'} {currency}</ThemedText>
-              <ThemedText style={{ fontSize: 12, color: '#9a9fa8', marginTop: 2 }}>
+              <ThemedText style={{ fontSize: 12, color: theme.textSecondary, marginTop: 2 }}>
                 ≈ ${feeUsd}
               </ThemedText>
             </View>
@@ -163,7 +171,7 @@ function ConfirmOrderScreen({
         </View>
 
         <View style={co.warningBox}>
-          <Ionicons name="alert-circle-outline" size={18} color="#9a9fa8" style={{ marginRight: 10, marginTop: 1 }} />
+          <Ionicons name="alert-circle-outline" size={18} color={theme.textSecondary} style={{ marginRight: 10, marginTop: 1 }} />
           <ThemedText style={co.warningText}>
             Ensure that the address is correct and on the same network.{'\n'}
             Transactions cannot be cancelled.
@@ -180,36 +188,65 @@ function ConfirmOrderScreen({
   );
 }
 
-// ─── Screen 2: Passkey Verify ──────────────────────────────────────────────
+// Screen 2: Passkey / Biometric Verify
 function PasskeyScreen({ onSuccess, onBack }: any) {
   const colorScheme = useColorScheme() ?? 'dark';
+  const theme = Colors[colorScheme];
+  const pk = getPkStyles(theme);
+  const [authState, setAuthState] = useState<'idle' | 'verifying' | 'failed' | 'unsupported'>('idle');
 
-  // Animated bars for the "Verifying with passkey" loader
-  const bars = [0, 1, 2, 3].map(() => useRef(new Animated.Value(0.4)).current);
+  const triggerBiometric = async () => {
+    setAuthState('verifying');
 
-  useEffect(() => {
-    bars.forEach((bar, i) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(i * 120),
-          Animated.timing(bar, { toValue: 1, duration: 400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-          Animated.timing(bar, { toValue: 0.4, duration: 400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        ])
-      ).start();
+    // Check device support
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+    if (!hasHardware || !isEnrolled) {
+      // No biometrics — fall back to device PIN/password
+      const result = await LocalAuthentication.authenticateAsync({
+        disableDeviceFallback: false,
+      });
+      if (result.success) {
+        onSuccess();
+      } else {
+        setAuthState('unsupported');
+      }
+      return;
+    }
+
+    const result = await LocalAuthentication.authenticateAsync({
+      disableDeviceFallback: false,
     });
 
-    // Auto-advance after 2.5s simulating passkey verification
-    const timer = setTimeout(onSuccess, 2500);
-    return () => clearTimeout(timer);
+    if (result.success) {
+      onSuccess();
+    } else {
+      setAuthState('failed');
+    }
+  };
+
+  useEffect(() => {
+    // Trigger immediately when screen mounts
+    triggerBiometric();
   }, []);
 
+  const stateLabel = () => {
+    switch (authState) {
+      case 'verifying': return 'Verifying with passkey';
+      case 'failed': return 'Verification failed. Try again.';
+      case 'unsupported': return 'No biometrics available on this device.';
+      default: return 'Waiting...';
+    }
+  };
+
   return (
-    <SafeAreaView style={[pk.container, { backgroundColor: '#1a1d26' }]}>
+    <SafeAreaView style={[pk.container, { backgroundColor: theme.background }]}>
       <TouchableOpacity onPress={onBack} style={pk.backBtn}>
-        <Ionicons name="arrow-back" size={22} color="#fff" />
+        <Ionicons name="arrow-back" size={22} color={theme.text} />
       </TouchableOpacity>
-      <TouchableOpacity style={pk.closeBtn}>
-        <Ionicons name="close" size={22} color="#fff" />
+      <TouchableOpacity onPress={onBack} style={pk.closeBtn}>
+        <Ionicons name="close" size={22} color={theme.text} />
       </TouchableOpacity>
 
       <View style={pk.content}>
@@ -218,27 +255,38 @@ function PasskeyScreen({ onSuccess, onBack }: any) {
           Your device will ask your fingerprint, face, or screen lock.
         </ThemedText>
 
-        {/* Person + Key Icon */}
+        {/* Icon + status */}
         <View style={pk.iconWrap}>
           <Image
             source={require('@/assets/icons/passverify.png')}
-            style={{ width: 120, height: 120 }}
-            resizeMode="contain"
-          />
-          <ThemedText style={pk.verifyingText}>Verifying with passkey</ThemedText>
-        </View>          
+            style={{ width: 120, height: 120, tintColor: colorScheme === 'light' ? theme.text : undefined }}
+            resizeMode="contain" />
+          <ThemedText style={[pk.verifyingText, authState === 'failed' || authState === 'unsupported' ? { color: theme.red } : { color: theme.text },]}>
+            {stateLabel()}
+          </ThemedText>
+        </View>
+
+        {/* Retry button shown only on failure */}
+        {(authState === 'failed' || authState === 'unsupported') && (
+          <TouchableOpacity style={pk.retryBtn} onPress={triggerBiometric}>
+            <ThemedText style={pk.retryText}>Try Again</ThemedText>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: 32, gap: 6 }}>
-        <BinanceShieldIcon size={18} />
+        <BinanceShieldIcon size={18} theme={theme} />
         <ThemedText style={[pk.protectedText, { paddingBottom: 0 }]}>Protected by Binance Risk</ThemedText>
       </View>
     </SafeAreaView>
   );
 }
 
-// ─── Screen 3: Processing ──────────────────────────────────────────────────
-function ProcessingScreen({ amount, currency, onDone }: any) {
+// Screen 3: Processing
+function ProcessingScreen({ amount, currency, onViewHistory, onBack }: any) {
+  const colorScheme = useColorScheme() ?? 'dark';
+  const theme = Colors[colorScheme];
+  const pr = getPrStyles(theme);
   const estimatedTime = new Date(Date.now() + 8000);
   const timeStr = estimatedTime.toLocaleString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -251,33 +299,30 @@ function ProcessingScreen({ amount, currency, onDone }: any) {
     Animated.loop(
       Animated.sequence([
         Animated.timing(sandAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(sandAnim, { toValue: 0, duration: 0, useNativeDriver: true }), // ← both must match
+        Animated.timing(sandAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
       ])
     ).start();
-
-    const timer = setTimeout(onDone, 8000);
-    return () => clearTimeout(timer);
   }, []);
 
   const sandTranslate = sandAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 12] });
 
   return (
-    <SafeAreaView style={[pr.container, { backgroundColor: '#1a1d26' }]}>
-      <TouchableOpacity style={pr.backBtn}>
-        <Ionicons name="arrow-back" size={22} color="#fff" />
+    <SafeAreaView style={[pr.container, { backgroundColor: theme.background }]}>
+      <TouchableOpacity style={pr.backBtn} onPress={onBack}>
+        <Ionicons name="arrow-back" size={22} color={theme.text} />
       </TouchableOpacity>
 
       <View style={[pr.content, { marginTop: -250 }]}>
         {/* PNG hourglass icon */}
         <Image
           source={require('@/assets/icons/withrawprocess.png')}
-          style={{ width: 100, height: 100, marginBottom: 32 }}
+          style={{ width: 100, height: 100, marginBottom: 32, tintColor: colorScheme === 'light' ? theme.text : undefined }}
           resizeMode="contain"
         />
 
         <ThemedText style={pr.title}>Withdrawal Processing</ThemedText>
         <ThemedText style={pr.amount}>{amount} {currency}</ThemedText>
-        <ThemedText style={[pr.timeText, { color: '#fff' }]} numberOfLines={1} adjustsFontSizeToFit>
+        <ThemedText style={[pr.timeText, { color: theme.text }]} numberOfLines={1} adjustsFontSizeToFit>
           Estimated completion time: {timeStr}
         </ThemedText>
         <ThemedText style={pr.subText} numberOfLines={2} adjustsFontSizeToFit>
@@ -286,7 +331,7 @@ function ProcessingScreen({ amount, currency, onDone }: any) {
       </View>
 
       <View style={pr.footer}>
-        <TouchableOpacity style={pr.viewBtn} disabled>
+        <TouchableOpacity style={pr.viewBtn} onPress={onViewHistory}>
           <ThemedText style={pr.viewBtnText}>View History</ThemedText>
         </TouchableOpacity>
       </View>
@@ -294,8 +339,11 @@ function ProcessingScreen({ amount, currency, onDone }: any) {
   );
 }
 
-// ─── Screen 4: Success ────────────────────────────────────────────────────
-function SuccessScreen({ amount, currency, onViewHistory }: any) {
+// Screen 4: Success
+function SuccessScreen({ amount, currency, onViewHistory, onBack }: any) {
+  const colorScheme = useColorScheme() ?? 'dark';
+  const theme = Colors[colorScheme];
+  const su = getSuStyles(theme);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const diamondAnim = useRef(new Animated.Value(0)).current;
 
@@ -307,9 +355,9 @@ function SuccessScreen({ amount, currency, onViewHistory }: any) {
   }, []);
 
   return (
-    <SafeAreaView style={[su.container, { backgroundColor: '#1a1d26' }]}>
-      <TouchableOpacity style={su.backBtn} onPress={onViewHistory}>
-        <Ionicons name="arrow-back" size={22} color="#fff" />
+    <SafeAreaView style={[su.container, { backgroundColor: theme.background }]}>
+      <TouchableOpacity style={su.backBtn} onPress={onBack}>
+        <Ionicons name="arrow-back" size={22} color={theme.text} />
       </TouchableOpacity>
 
       <View style={su.content}>
@@ -317,7 +365,7 @@ function SuccessScreen({ amount, currency, onViewHistory }: any) {
         <Animated.View style={[su.checkWrap, { transform: [{ scale: scaleAnim }] }]}>
           <View style={su.checkOuter}>
             <View style={su.checkInner}>
-              <Ionicons name="checkmark" size={36} color="#fff" />
+              <Ionicons name="checkmark" size={36} color={theme.background} />
             </View>
           </View>
         </Animated.View>
@@ -332,26 +380,29 @@ function SuccessScreen({ amount, currency, onViewHistory }: any) {
   );
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────
+// Main Screen
 export default function WithdrawCoinScreen() {
   const colorScheme = useColorScheme() ?? 'dark';
   const theme = Colors[colorScheme];
   const router = useRouter();
   const { coin } = useLocalSearchParams<{ coin: string }>();
-  const currency = typeof coin === 'string' ? coin.toUpperCase() : 'BTC';
+  const rawCoin = typeof coin === 'string' ? coin.toUpperCase() : 'BTC';
+  const currency = rawCoin.includes('-') ? rawCoin.split('-')[0] : rawCoin;
+  const { kshRate } = useCurrencyStore((state) => state);
 
   const [amount, setAmount] = useState('');
   const [address, setAddress] = useState('');
   const [network, setNetwork] = useState('');
   const [isNetworkModalVisible, setNetworkModalVisible] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Flow step: 'form' | 'confirm' | 'passkey' | 'processing' | 'success'
   const [step, setStep] = useState<'form' | 'confirm' | 'passkey' | 'processing' | 'success'>('form');
+  const [withdrawalStatus, setWithdrawalStatus] = useState<'PENDING' | 'COMPLETED'>('PENDING');
+  const [pollIntervalId, setPollIntervalId] = useState<any>(null);
+  const [currentWithdrawalId, setCurrentWithdrawalId] = useState<string | null>(null);
 
-  const { user } = useAuthStore();
-  const realAccount = user?.accounts?.find((a: any) => a.type === 'REAL');
-  const currentBalance = parseFloat(realAccount?.balance || '0');
+  const { requestWithdrawal, fetchHistory, history } = useWithdrawalStore();
 
   const getDecimals = (c: string) => {
     switch (c) {
@@ -359,9 +410,20 @@ export default function WithdrawCoinScreen() {
       case 'ETH': return 6; case 'USDT': return 2; default: return 6;
     }
   };
-  
+
+  const { globalBalance, fetchGlobalBalance } = usePortfolioStore();
+
+  useEffect(() => {
+    fetchGlobalBalance();
+  }, []);
+
   const [livePrice, setLivePrice] = useState<number>(1);
   const [priceLoading, setPriceLoading] = useState(true);
+
+  const availableInCurrency = priceLoading ? null : globalBalance / livePrice;
+  const availableBalanceStr = availableInCurrency !== null
+    ? availableInCurrency.toFixed(getDecimals(currency))
+    : null;
 
   useEffect(() => {
     const symbolMap: Record<string, string> = {
@@ -386,67 +448,170 @@ export default function WithdrawCoinScreen() {
         const price = parseFloat(data.price);
         if (price > 0) setLivePrice(price);
       })
-      .catch(() => {}) // fallback to WS if REST fails
+      .catch(() => { }) // fallback to WS if REST fails
       .finally(() => setPriceLoading(false));
 
     // 2. WebSocket keeps it live after initial load
+    let lastWsUpdate = 0;
     const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@ticker`);
     ws.onmessage = (e) => {
       try {
-        const data = JSON.parse(e.data);
-        const price = parseFloat(data.c);
-        if (price > 0) setLivePrice(price);
-      } catch {}
+        const now = Date.now();
+        // Throttle updates to prevent screen UI from hanging due to continuous re-rendering
+        if (now - lastWsUpdate > 1500) {
+          const data = JSON.parse(e.data);
+          const price = parseFloat(data.c);
+          if (price > 0) {
+            setLivePrice(price);
+            lastWsUpdate = now;
+          }
+        }
+      } catch { }
     };
     return () => ws.close();
   }, [currency]);
 
   // Show skeleton/placeholder while price loads
-  const availableInCurrency = priceLoading ? null : currentBalance / livePrice;
-  const availableBalanceStr = availableInCurrency !== null
-    ? availableInCurrency.toFixed(getDecimals(currency))
-    : null;
 
-  const handleWithdraw = async () => {
+  // Resets all withdrawal flow state cleanly before navigating away
+  const resetFlow = () => {
+    if (pollIntervalId) clearInterval(pollIntervalId);
+    setPollIntervalId(null);
+    setStep('form');
+    setWithdrawalStatus('PENDING');
+    setCurrentWithdrawalId(null);
+    setAmount('');
+    setAddress('');
+    setNetwork('');
+  };
+
+  const handlePasskeySuccess = async () => {
+    setStep('processing');
+    setWithdrawalStatus('PENDING');
+    setCurrentWithdrawalId(null); // clear any stale ID before new request
+
+    // Convert coin amount to USD before sending — backend stores and deducts in USD
+    const usdAmount = parseFloat(amount) * livePrice;
+
+    const res = await requestWithdrawal({
+      amount: usdAmount,
+      currency,
+      destinationAddress: address,
+      network
+    });
+
+    if (res.success) {
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: `${currency} Withdrawal Processing`,
+          body: `Your withdrawal of ${amount} ${currency} is currently processing. If you do not recognize this activity, please contact us immediately.`,
+        },
+        trigger: null,
+      });
+      const newId = res.withdrawalId ?? null;
+      setCurrentWithdrawalId(newId);
+      setTimeout(() => {
+        fetchHistory();
+        const interval = setInterval(() => {
+          fetchHistory();
+        }, 5000);
+        setPollIntervalId(interval);
+      }, 8000);
+    } else {
+      Alert.alert('Error', res.error || 'Withdrawal failed');
+      setStep('confirm');
+    }
+  };
+
+  // Helper to find the correct withdrawal strictly by ID
+  const getActiveWithdrawal = () => {
+    if (currentWithdrawalId) {
+      return history.find(w => w.id === currentWithdrawalId) || null;
+    }
+    return null;
+  };
+
+  // Re-check status immediately when screen regains focus (e.g. returning from history screen).
+  useFocusEffect(
+    useCallback(() => {
+      if (step === 'processing') {
+        const thisWithdrawal = getActiveWithdrawal();
+        if (thisWithdrawal?.status === 'COMPLETED') {
+          if (withdrawalStatus !== 'COMPLETED') {
+            const timeStr = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' (UTC)';
+            Notifications.scheduleNotificationAsync({
+              content: {
+                title: `${currency} Withdrawal Successful`,
+                body: `You have successfully withdrawn ${amount} ${currency} at ${timeStr}. If you do not recognize this activity please contact us immediately.`,
+              },
+              trigger: null,
+            });
+          }
+          setWithdrawalStatus('COMPLETED');
+          if (pollIntervalId) clearInterval(pollIntervalId);
+        }
+        fetchHistory();
+      }
+    }, [step, currentWithdrawalId, history, pollIntervalId, withdrawalStatus, amount, currency])
+  );
+
+  useEffect(() => {
+    if (step === 'processing' && history.length > 0) {
+      const thisWithdrawal = getActiveWithdrawal();
+      if (thisWithdrawal && thisWithdrawal.status === 'COMPLETED') {
+        if (withdrawalStatus !== 'COMPLETED') {
+          const timeStr = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' (UTC)';
+          Notifications.scheduleNotificationAsync({
+            content: {
+              title: `${currency} Withdrawal Successful`,
+              body: `You have successfully withdrawn ${amount} ${currency} at ${timeStr}. If you do not recognize this activity please contact us immediately.`,
+            },
+            trigger: null,
+          });
+        }
+        setWithdrawalStatus('COMPLETED');
+        if (pollIntervalId) clearInterval(pollIntervalId);
+      }
+    }
+  }, [history, step, currentWithdrawalId, pollIntervalId, withdrawalStatus, amount, currency]);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalId) clearInterval(pollIntervalId);
+    };
+  }, [pollIntervalId]);
+
+  const handleWithdraw = () => {
     if (!address || !network || !amount) {
       Alert.alert('Error', 'Please fill in all fields (Address, Network, Amount)');
       return;
     }
-    const amountInUsd = parseFloat(amount) * livePrice;
-    setIsSubmitting(true);
-    try {
-      await api.post<any>('/marketer/deposit/initiate', {
-        currency,           // ← the coin e.g. 'BTC', 'USDT'
-        network,            // ← e.g. 'BTC', 'BEP20'
-        amount: parseFloat(amountInUsd.toFixed(2)),
-      });
-    } catch (_) {}
-    setIsSubmitting(false);
     setStep('confirm');
   };
 
-  // ── Flow rendering ──
+  // Flow rendering
   if (step === 'confirm') {
     return (
       <ConfirmOrderScreen
         currency={currency} amount={amount} address={address} network={network}
-        livePrice={livePrice}   
+        livePrice={livePrice}
         onConfirm={() => setStep('passkey')}
         onBack={() => setStep('form')}
       />
     );
   }
   if (step === 'passkey') {
-    return <PasskeyScreen onSuccess={() => setStep('processing')} onBack={() => setStep('confirm')} />;
+    return <PasskeyScreen onSuccess={handlePasskeySuccess} onBack={() => setStep('confirm')} />;
   }
-  if (step === 'processing') {
-    return <ProcessingScreen amount={amount} currency={currency} onDone={() => setStep('success')} />;
-  }
-  if (step === 'success') {
-    return <SuccessScreen amount={amount} currency={currency} onViewHistory={() => router.push('/assets')} />;
+  if (step === 'processing' || step === 'success') {
+    const handleBack = () => { resetFlow(); router.back(); };
+    if (withdrawalStatus === 'COMPLETED') {
+      return <SuccessScreen amount={amount} currency={currency} onViewHistory={() => router.push('/history')} onBack={handleBack} />;
+    }
+    return <ProcessingScreen amount={amount} currency={currency} onViewHistory={() => router.push('/history')} onBack={handleBack} />;
   }
 
-  // ── Step: form (original screen) ──
+  // Step: form (original screen)
   const networkObj = POPULAR_NETWORKS.find(n => n.id === network);
 
   return (
@@ -478,13 +643,24 @@ export default function WithdrawCoinScreen() {
           <ThemedText style={[styles.label, { color: theme.textSecondary }]}>Address</ThemedText>
           <View style={[styles.inputContainer, { backgroundColor: theme.surface }]}>
             <TextInput
-              style={[styles.input, { color: theme.text, paddingTop: 14, paddingBottom: 14 }]}
+              style={[styles.input, { paddingTop: 14, paddingBottom: 14 }]}
               placeholder="Long press to paste"
               placeholderTextColor={theme.textSecondary}
               onChangeText={setAddress}
-              value={address}
               multiline autoCapitalize="none" autoCorrect={false}
-            />
+            >
+              {address ? (
+                address.length > 20 ? (
+                  <Text>
+                    <Text style={{ color: theme.yellow }}>{address.slice(0, 8)}</Text>
+                    <Text style={{ color: theme.text }}>{address.slice(8, -8)}</Text>
+                    <Text style={{ color: theme.yellow }}>{address.slice(-8)}</Text>
+                  </Text>
+                ) : (
+                  <Text style={{ color: theme.text }}>{address}</Text>
+                )
+              ) : null}
+            </TextInput>
             <View style={styles.inputRightIcons}>
               <TouchableOpacity style={styles.inputIconButton}>
                 <Ionicons name="person-circle-outline" size={24} color={theme.textSecondary} />
@@ -578,13 +754,10 @@ export default function WithdrawCoinScreen() {
           </ThemedText>
         </View>
         <TouchableOpacity
-          style={[styles.primaryButton, { backgroundColor: theme.yellow, opacity: isSubmitting ? 0.7 : 1 }]}
+          style={[styles.primaryButton, { backgroundColor: theme.yellow }]}
           onPress={handleWithdraw}
-          disabled={isSubmitting}
         >
-          <ThemedText style={styles.primaryButtonText}>
-            {isSubmitting ? 'Processing...' : 'Withdraw'}
-          </ThemedText>
+          <ThemedText style={styles.primaryButtonText}>Withdraw</ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -606,7 +779,7 @@ export default function WithdrawCoinScreen() {
                 <View style={[styles.networkCardDivider, { backgroundColor: theme.surfaceHighlight }]} />
                 <View style={styles.networkCardBody}>
                   <ThemedText style={[styles.networkCardText, { color: theme.textSecondary }]}>
-                    Fee {net.fee} {currency} ( ≈ KSh {(Number(net.fee) * 145).toFixed(2)} )
+                    Fee {net.fee} {currency} ( ≈ KSh {(Number(net.fee) * livePrice * kshRate).toFixed(2)} )
                   </ThemedText>
                   <ThemedText style={[styles.networkCardText, { color: theme.textSecondary }]}>
                     Minimum withdrawal 0.1 {currency}
@@ -632,79 +805,84 @@ export default function WithdrawCoinScreen() {
   );
 }
 
-// ─── Styles: Confirm Order ─────────────────────────────────────────────────
-const co = StyleSheet.create({
+// Styles: Confirm Order
+const getCoStyles = (theme: any) => StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
   headerBack: { width: 40, justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 'bold', color: '#fff' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 'bold', color: theme.text },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   heroSection: { alignItems: 'center', paddingVertical: 32 },
-  receiveLabel: { fontSize: 14, color: '#9a9fa8', marginBottom: 10 },
-  receiveAmount: { fontSize: 36, fontWeight: 'bold', color: '#fff', marginBottom: 6, lineHeight: 42 },
-  receiveUsd: { fontSize: 14, color: '#9a9fa8' },
+  receiveLabel: { fontSize: 14, color: theme.textSecondary, marginBottom: 10 },
+  receiveAmount: { fontSize: 28, fontWeight: 'bold', color: theme.text, marginBottom: 6, lineHeight: 42 },
+  receiveUsd: { fontSize: 14, color: theme.textSecondary },
   detailsSection: { marginTop: 8 },
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-    paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.02)',
+    paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: theme.surfaceHighlight,
   },
-  rowLabel: { fontSize: 14, color: '#9a9fa8', flex: 1 },
-  rowValue: { fontSize: 14, color: '#fff', textAlign: 'right', flex: 1.5 },
+  rowLabel: { fontSize: 14, color: theme.textSecondary, flex: 1 },
+  rowValue: { fontSize: 14, color: theme.text, textAlign: 'right', flex: 1.5 },
   warningBox: {
-    flexDirection: 'row', backgroundColor: '#252830', borderRadius: 12,
+    flexDirection: 'row', backgroundColor: theme.surface, borderRadius: 12,
     padding: 16, marginTop: 24,
   },
-  warningText: { fontSize: 13, color: '#9a9fa8', flex: 1, lineHeight: 20 },
+  warningText: { fontSize: 13, color: theme.textSecondary, flex: 1, lineHeight: 20 },
   footer: { paddingHorizontal: 20, paddingBottom: 32, paddingTop: 16 },
   confirmBtn: {
-    height: 52, borderRadius: 8, backgroundColor: '#F5C518',
+    height: 52, borderRadius: 8, backgroundColor: theme.yellow,
     justifyContent: 'center', alignItems: 'center',
   },
   confirmBtnText: { color: '#000', fontSize: 16, fontWeight: 'bold' },
 });
 
-// ─── Styles: Passkey ───────────────────────────────────────────────────────
-const pk = StyleSheet.create({
+// Styles: Passkey
+const getPkStyles = (theme: any) => StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24 },
   backBtn: { position: 'absolute', top: 54, left: 8, zIndex: 10, padding: 8 },
   closeBtn: { position: 'absolute', top: 54, right: 20, zIndex: 10, padding: 8 },
-  content: { flex: 1, paddingTop: 70, left: 5 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 12, lineHeight: 30 },
-  subtitle: { fontSize: 15, color: '#9a9fa8', lineHeight: 22, marginBottom: 60 },
+  content: { flex: 1, paddingTop: 70, alignItems: 'center' },
+  title: { fontSize: 28, fontWeight: 'bold', color: theme.text, marginBottom: 12, lineHeight: 30, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: theme.textSecondary, lineHeight: 22, marginBottom: 60, textAlign: 'center' },
   iconWrap: { alignItems: 'center', marginBottom: 16 },
   iconCircleOuter: {
-    width: 100, height: 90, borderWidth: 2, borderColor: '#fff',
+    width: 100, height: 90, borderWidth: 2, borderColor: theme.text,
     borderRadius: 50, justifyContent: 'center', alignItems: 'center',
     position: 'relative', marginBottom: 8,
   },
   iconCircleInner: {
-    width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: '#fff',
+    width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: theme.text,
     position: 'absolute', top: 14,
   },
   shoulders: {
     position: 'absolute', bottom: 0, width: 70, height: 30,
     borderTopLeftRadius: 35, borderTopRightRadius: 35,
-    borderTopWidth: 2, borderColor: '#fff',
+    borderTopWidth: 2, borderColor: theme.text,
   },
   keyBadge: {
     position: 'absolute', right: -14, top: 8,
-    backgroundColor: '#1a1d26', borderRadius: 12, padding: 2,
+    backgroundColor: theme.background, borderRadius: 12, padding: 2,
   },
   keyEmoji: { fontSize: 18 },
   dotsBar: {
-    flexDirection: 'row', gap: 8, backgroundColor: '#252830',
+    flexDirection: 'row', gap: 8, backgroundColor: theme.surface,
     paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, marginTop: 4,
   },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fff' },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: theme.text },
   verifyingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   bar: { width: 4, height: 20, borderRadius: 2 },
-  verifyingText: { fontSize: 15, color: '#fff', textAlign: 'center', marginTop: 8 },
-  protectedText: { textAlign: 'center', color: '#9a9fa8', fontSize: 13, paddingBottom: 32 },
+  verifyingText: { fontSize: 15, color: theme.text, textAlign: 'center', marginTop: 8 },
+  protectedText: { textAlign: 'center', color: theme.textSecondary, fontSize: 13, paddingBottom: 32 },
+  retryBtn: {
+    marginTop: 24, paddingVertical: 12, paddingHorizontal: 40,
+    borderRadius: 8, borderWidth: 1, borderColor: theme.yellow,
+  },
+  retryText: { color: theme.yellow, fontSize: 15, fontWeight: '600' },
 });
 
-// ─── Styles: Processing ────────────────────────────────────────────────────
-const pr = StyleSheet.create({
+// Styles: Processing
+const getPrStyles = (theme: any) => StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 54, left: 8, zIndex: 10, padding: 8 },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
@@ -712,67 +890,67 @@ const pr = StyleSheet.create({
   hourglassTop: {
     width: 0, height: 0,
     borderLeftWidth: 36, borderRightWidth: 36, borderTopWidth: 44,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#fff',
+    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: theme.text,
     opacity: 0.9,
   },
   sand: {
     position: 'absolute', top: 10, width: 20, height: 20,
-    backgroundColor: '#F5C518', borderRadius: 2, opacity: 0.85,
+    backgroundColor: theme.yellow, borderRadius: 2, opacity: 0.85,
   },
-  hourglassNeck: { width: 4, height: 12, backgroundColor: '#fff', opacity: 0.6 },
+  hourglassNeck: { width: 4, height: 12, backgroundColor: theme.text, opacity: 0.6 },
   hourglassBottom: {
     width: 0, height: 0,
     borderLeftWidth: 36, borderRightWidth: 36, borderBottomWidth: 44,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#fff',
+    borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: theme.text,
     opacity: 0.9,
   },
   hourglassFrame: {
     position: 'absolute', top: 0, width: 80, height: 4,
-    backgroundColor: '#fff', borderRadius: 2,
+    backgroundColor: theme.text, borderRadius: 2,
   },
   hourglassFrameBottom: { top: undefined, bottom: 0 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff', marginBottom: 16 },
-  amount: { fontSize: 32, fontWeight: 'bold', color: '#fff', marginBottom: 16 },
-  timeText: { fontSize: 13, color: '#9a9fa8', textAlign: 'center', marginBottom: 12, lineHeight: 20 },
-  subText: { fontSize: 13, color: '#9a9fa8', textAlign: 'center', lineHeight: 20 },
+  title: { fontSize: 20, fontWeight: 'bold', color: theme.text, marginBottom: 16 },
+  amount: { fontSize: 32, fontWeight: 'bold', color: theme.text, marginBottom: 16 },
+  timeText: { fontSize: 13, color: theme.textSecondary, textAlign: 'center', marginBottom: 12, lineHeight: 20 },
+  subText: { fontSize: 13, color: theme.textSecondary, textAlign: 'center', lineHeight: 20 },
   footer: { paddingHorizontal: 20, paddingBottom: 32 },
   viewBtn: {
-    height: 52, borderRadius: 8, backgroundColor: '#F5C518',
+    height: 52, borderRadius: 8, backgroundColor: theme.yellow,
     justifyContent: 'center', alignItems: 'center',
   },
   viewBtnText: { color: '#000', fontSize: 16, fontWeight: 'bold' },
 });
 
-// ─── Styles: Success ───────────────────────────────────────────────────────
-const su = StyleSheet.create({
+// Styles: Success
+const getSuStyles = (theme: any) => StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 54, left: 20, zIndex: 10, padding: 8 },
-  content: { 
-    flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 26,
     marginTop: -250,
   },
   diamond: {
-    width: 20, height: 20, backgroundColor: '#F5C518',
+    width: 20, height: 20, backgroundColor: theme.yellow,
     transform: [{ rotate: '45deg' }], marginBottom: 32,
   },
   checkWrap: { marginBottom: 28 },
   checkOuter: {
     width: 88, height: 88, borderRadius: 44, borderWidth: 2.5,
-    borderColor: '#0FC97B', justifyContent: 'center', alignItems: 'center',
+    borderColor: theme.green, justifyContent: 'center', alignItems: 'center',
   },
   checkInner: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: '#0FC97B', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: theme.green, justifyContent: 'center', alignItems: 'center',
   },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 14 },
-  amount: { fontSize: 32, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
-  subText: { fontSize: 11, color: '#9a9fa8', textAlign: 'center', lineHeight: 20 },
+  title: { fontSize: 22, fontWeight: 'bold', color: theme.text, marginBottom: 14 },
+  amount: { fontSize: 32, fontWeight: 'bold', color: theme.text, marginBottom: 20 },
+  subText: { fontSize: 11, color: theme.textSecondary, textAlign: 'center', lineHeight: 20 },
 });
 
-// ─── Original form styles (unchanged) ─────────────────────────────────────
+// Original form styles (unchanged)
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },

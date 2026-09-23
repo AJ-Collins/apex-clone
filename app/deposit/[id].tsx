@@ -37,60 +37,60 @@ interface NetworkOption {
 
 const NETWORKS_BY_COIN: Record<string, NetworkOption[]> = {
   BTC: [
-    { name: 'BTC',      fullName: 'Bitcoin (Native SegWit)',  value: 'bitcoin_segwit', confirm: '1 block confirmation/s', minDeposit: '>0.000006 BTC',  arrival: 'Est. arrival 1 mins' },
-    { name: 'BTC Legacy', fullName: 'Bitcoin (Legacy P2PKH)', value: 'bitcoin',        confirm: '1 block confirmation/s', minDeposit: '>0.00001 BTC',   arrival: 'Est. arrival 1 mins' },
+    { name: 'BTC', fullName: 'Bitcoin (Native SegWit)', value: 'bitcoin_segwit', confirm: '1 block confirmation/s', minDeposit: '>0.000006 BTC', arrival: 'Est. arrival 1 mins' },
+    { name: 'BTC Legacy', fullName: 'Bitcoin (Legacy P2PKH)', value: 'bitcoin', confirm: '1 block confirmation/s', minDeposit: '>0.00001 BTC', arrival: 'Est. arrival 1 mins' },
   ],
   ETH: [
-    { name: 'ETH',  fullName: 'Ethereum (ERC20)',  value: 'erc20',    confirm: '12 block confirmation/s', minDeposit: '>0.00002 ETH',  arrival: 'Est. arrival 3 mins' },
-    { name: 'ARB',  fullName: 'Arbitrum One',      value: 'arbitrum', confirm: '1 block confirmation/s',  minDeposit: '>0.00001 ETH',  arrival: 'Est. arrival 1 mins' },
-    { name: 'BSC',  fullName: 'BNB Smart Chain (BEP20)', value: 'bsc', confirm: '1 block confirmation/s', minDeposit: '>0.00000002 ETH', arrival: 'Est. arrival 1 mins' },
+    { name: 'ETH', fullName: 'Ethereum (ERC20)', value: 'erc20', confirm: '12 block confirmation/s', minDeposit: '>0.00002 ETH', arrival: 'Est. arrival 3 mins' },
+    { name: 'ARB', fullName: 'Arbitrum One', value: 'arbitrum', confirm: '1 block confirmation/s', minDeposit: '>0.00001 ETH', arrival: 'Est. arrival 1 mins' },
+    { name: 'BSC', fullName: 'BNB Smart Chain (BEP20)', value: 'bsc', confirm: '1 block confirmation/s', minDeposit: '>0.00000002 ETH', arrival: 'Est. arrival 1 mins' },
   ],
   USDT: [
-    { name: 'ETH',  fullName: 'Ethereum (ERC20)',        value: 'erc20',    confirm: '12 block confirmation/s', minDeposit: '>1 USDT',   arrival: 'Est. arrival 3 mins' },
-    { name: 'BSC',  fullName: 'BNB Smart Chain (BEP20)', value: 'bsc',      confirm: '1 block confirmation/s',  minDeposit: '>1 USDT',   arrival: 'Est. arrival 1 mins' },
-    { name: 'TRX',  fullName: 'Tron (TRC20)',            value: 'tron',     confirm: '1 block confirmation/s',  minDeposit: '>1 USDT',   arrival: 'Est. arrival 1 mins' },
-    { name: 'POL',  fullName: 'Polygon',                 value: 'polygon',  confirm: '1 block confirmation/s',  minDeposit: '>1 USDT',   arrival: 'Est. arrival 1 mins' },
-    { name: 'ARB',  fullName: 'Arbitrum One',            value: 'arbitrum', confirm: '1 block confirmation/s',  minDeposit: '>1 USDT',   arrival: 'Est. arrival 1 mins' },
-    { name: 'SOL',  fullName: 'Solana (SPL)',             value: 'solana',   confirm: '1 block confirmation/s',  minDeposit: '>1 USDT',   arrival: 'Est. arrival 1 mins' },
+    { name: 'ETH', fullName: 'Ethereum (ERC20)', value: 'erc20', confirm: '12 block confirmation/s', minDeposit: '>1 USDT', arrival: 'Est. arrival 3 mins' },
+    { name: 'BSC', fullName: 'BNB Smart Chain (BEP20)', value: 'bsc', confirm: '1 block confirmation/s', minDeposit: '>1 USDT', arrival: 'Est. arrival 1 mins' },
+    { name: 'TRX', fullName: 'Tron (TRC20)', value: 'tron', confirm: '1 block confirmation/s', minDeposit: '>1 USDT', arrival: 'Est. arrival 1 mins' },
+    { name: 'POL', fullName: 'Polygon', value: 'polygon', confirm: '1 block confirmation/s', minDeposit: '>1 USDT', arrival: 'Est. arrival 1 mins' },
+    { name: 'ARB', fullName: 'Arbitrum One', value: 'arbitrum', confirm: '1 block confirmation/s', minDeposit: '>1 USDT', arrival: 'Est. arrival 1 mins' },
+    { name: 'SOL', fullName: 'Solana (SPL)', value: 'solana', confirm: '1 block confirmation/s', minDeposit: '>1 USDT', arrival: 'Est. arrival 1 mins' },
   ],
   USDC: [
-    { name: 'ETH',  fullName: 'Ethereum (ERC20)',        value: 'erc20',    confirm: '12 block confirmation/s', minDeposit: '>1 USDC',   arrival: 'Est. arrival 3 mins' },
-    { name: 'BSC',  fullName: 'BNB Smart Chain (BEP20)', value: 'bsc',      confirm: '1 block confirmation/s',  minDeposit: '>1 USDC',   arrival: 'Est. arrival 1 mins' },
-    { name: 'TRX',  fullName: 'Tron (TRC20)',            value: 'tron',     confirm: '1 block confirmation/s',  minDeposit: '>1 USDC',   arrival: 'Est. arrival 1 mins' },
-    { name: 'POL',  fullName: 'Polygon',                 value: 'polygon',  confirm: '1 block confirmation/s',  minDeposit: '>1 USDC',   arrival: 'Est. arrival 1 mins' },
-    { name: 'ARB',  fullName: 'Arbitrum One',            value: 'arbitrum', confirm: '1 block confirmation/s',  minDeposit: '>1 USDC',   arrival: 'Est. arrival 1 mins' },
-    { name: 'SOL',  fullName: 'Solana (SPL)',             value: 'solana',   confirm: '1 block confirmation/s',  minDeposit: '>1 USDC',   arrival: 'Est. arrival 1 mins' },
+    { name: 'ETH', fullName: 'Ethereum (ERC20)', value: 'erc20', confirm: '12 block confirmation/s', minDeposit: '>1 USDC', arrival: 'Est. arrival 3 mins' },
+    { name: 'BSC', fullName: 'BNB Smart Chain (BEP20)', value: 'bsc', confirm: '1 block confirmation/s', minDeposit: '>1 USDC', arrival: 'Est. arrival 1 mins' },
+    { name: 'TRX', fullName: 'Tron (TRC20)', value: 'tron', confirm: '1 block confirmation/s', minDeposit: '>1 USDC', arrival: 'Est. arrival 1 mins' },
+    { name: 'POL', fullName: 'Polygon', value: 'polygon', confirm: '1 block confirmation/s', minDeposit: '>1 USDC', arrival: 'Est. arrival 1 mins' },
+    { name: 'ARB', fullName: 'Arbitrum One', value: 'arbitrum', confirm: '1 block confirmation/s', minDeposit: '>1 USDC', arrival: 'Est. arrival 1 mins' },
+    { name: 'SOL', fullName: 'Solana (SPL)', value: 'solana', confirm: '1 block confirmation/s', minDeposit: '>1 USDC', arrival: 'Est. arrival 1 mins' },
   ],
   BNB: [
-    { name: 'BSC',  fullName: 'BNB Smart Chain (BEP20)', value: 'bsc',      confirm: '1 block confirmation/s',  minDeposit: '>0.001 BNB', arrival: 'Est. arrival 1 mins' },
-    { name: 'ETH',  fullName: 'Ethereum (BEP2)',         value: 'erc20',    confirm: '12 block confirmation/s', minDeposit: '>0.001 BNB', arrival: 'Est. arrival 3 mins' },
+    { name: 'BSC', fullName: 'BNB Smart Chain (BEP20)', value: 'bsc', confirm: '1 block confirmation/s', minDeposit: '>0.001 BNB', arrival: 'Est. arrival 1 mins' },
+    { name: 'ETH', fullName: 'Ethereum (BEP2)', value: 'erc20', confirm: '12 block confirmation/s', minDeposit: '>0.001 BNB', arrival: 'Est. arrival 3 mins' },
   ],
   SOL: [
-    { name: 'SOL',  fullName: 'Solana',                  value: 'solana',   confirm: '1 block confirmation/s',  minDeposit: '>0.01 SOL',  arrival: 'Est. arrival 1 mins' },
+    { name: 'SOL', fullName: 'Solana', value: 'solana', confirm: '1 block confirmation/s', minDeposit: '>0.01 SOL', arrival: 'Est. arrival 1 mins' },
   ],
   TRX: [
-    { name: 'TRX',  fullName: 'Tron',                    value: 'tron',     confirm: '1 block confirmation/s',  minDeposit: '>1 TRX',     arrival: 'Est. arrival 1 mins' },
+    { name: 'TRX', fullName: 'Tron', value: 'tron', confirm: '1 block confirmation/s', minDeposit: '>1 TRX', arrival: 'Est. arrival 1 mins' },
   ],
   XRP: [
-    { name: 'XRP',  fullName: 'XRP Ledger',              value: 'xrp',      confirm: '1 block confirmation/s',  minDeposit: '>0.1 XRP',   arrival: 'Est. arrival 1 mins' },
+    { name: 'XRP', fullName: 'XRP Ledger', value: 'xrp', confirm: '1 block confirmation/s', minDeposit: '>0.1 XRP', arrival: 'Est. arrival 1 mins' },
   ],
   LTC: [
-    { name: 'LTC',  fullName: 'Litecoin',                value: 'litecoin', confirm: '1 block confirmation/s',  minDeposit: '>0.001 LTC', arrival: 'Est. arrival 1 mins' },
+    { name: 'LTC', fullName: 'Litecoin', value: 'litecoin', confirm: '1 block confirmation/s', minDeposit: '>0.001 LTC', arrival: 'Est. arrival 1 mins' },
   ],
   DOGE: [
-    { name: 'DOGE', fullName: 'Dogecoin',                value: 'dogecoin', confirm: '1 block confirmation/s',  minDeposit: '>1 DOGE',    arrival: 'Est. arrival 1 mins' },
+    { name: 'DOGE', fullName: 'Dogecoin', value: 'dogecoin', confirm: '1 block confirmation/s', minDeposit: '>1 DOGE', arrival: 'Est. arrival 1 mins' },
   ],
   MATIC: [
-    { name: 'POL',  fullName: 'Polygon',                 value: 'polygon',  confirm: '1 block confirmation/s',  minDeposit: '>0.1 MATIC', arrival: 'Est. arrival 1 mins' },
-    { name: 'ETH',  fullName: 'Ethereum (ERC20)',        value: 'erc20',    confirm: '12 block confirmation/s', minDeposit: '>0.1 MATIC', arrival: 'Est. arrival 3 mins' },
+    { name: 'POL', fullName: 'Polygon', value: 'polygon', confirm: '1 block confirmation/s', minDeposit: '>0.1 MATIC', arrival: 'Est. arrival 1 mins' },
+    { name: 'ETH', fullName: 'Ethereum (ERC20)', value: 'erc20', confirm: '12 block confirmation/s', minDeposit: '>0.1 MATIC', arrival: 'Est. arrival 3 mins' },
   ],
 };
 
 /** Fallback for coins not in the map above (most EVM-based altcoins). */
 const DEFAULT_NETWORKS: NetworkOption[] = [
-  { name: 'ETH',  fullName: 'Ethereum (ERC20)',        value: 'erc20',    confirm: '12 block confirmation/s', minDeposit: '>0.00002',   arrival: 'Est. arrival 3 mins' },
-  { name: 'BSC',  fullName: 'BNB Smart Chain (BEP20)', value: 'bsc',      confirm: '1 block confirmation/s',  minDeposit: '>0.00000002', arrival: 'Est. arrival 1 mins' },
-  { name: 'ARB',  fullName: 'Arbitrum One',            value: 'arbitrum', confirm: '1 block confirmation/s',  minDeposit: '>0.00001',   arrival: 'Est. arrival 1 mins' },
+  { name: 'ETH', fullName: 'Ethereum (ERC20)', value: 'erc20', confirm: '12 block confirmation/s', minDeposit: '>0.00002', arrival: 'Est. arrival 3 mins' },
+  { name: 'BSC', fullName: 'BNB Smart Chain (BEP20)', value: 'bsc', confirm: '1 block confirmation/s', minDeposit: '>0.00000002', arrival: 'Est. arrival 1 mins' },
+  { name: 'ARB', fullName: 'Arbitrum One', value: 'arbitrum', confirm: '1 block confirmation/s', minDeposit: '>0.00001', arrival: 'Est. arrival 1 mins' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -383,9 +383,6 @@ export default function DepositCoinScreen() {
           <View style={styles.copyNotification}>
             <ThemedText type="bold" style={styles.copyNotificationTitle}>
               Copied to clipboard
-            </ThemedText>
-            <ThemedText style={styles.copyNotificationMessage}>
-              Please verify when pasting to prevent address tampering.
             </ThemedText>
           </View>
         </View>

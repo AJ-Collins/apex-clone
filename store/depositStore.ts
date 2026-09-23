@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import * as Notifications from 'expo-notifications';
 import { api } from '../lib/api';
 import { generateDepositAddress } from '../utils/addressGenerator';
+import { usePortfolioStore } from './portfolioStore';
 
 export interface DepositAddress {
   address: string;
@@ -76,6 +78,20 @@ export const useDepositStore = create<DepositState>((set) => ({
       set({ error: res.error || 'Failed to submit deposit' });
       return { success: false, error: res.error };
     }
+
+    // Refresh balances globally so the UI updates without a manual reload
+    usePortfolioStore.getState().fetchGlobalBalance();
+    usePortfolioStore.getState().fetchPortfolio();
+
+    const timeStr = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' (UTC)';
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: `${payload.currency} Deposit Successful`,
+        body: `You have successfully deposited ${payload.amount} ${payload.currency} at ${timeStr}. If you do not recognize this activity please contact us immediately.`,
+      },
+      trigger: null,
+    });
+
     return { success: true };
   },
 

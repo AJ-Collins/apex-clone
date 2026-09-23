@@ -12,12 +12,13 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SvgUri } from 'react-native-svg';
 
 const COINS = [
-  { id: 'BTC', name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', icon: 'bitcoin' },
+  { id: 'BTC', name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', logo: 'btc' },
   { id: 'ETH', name: 'Ethereum', symbol: 'ETH', color: '#627eea', icon: 'ethereum' },
-  { id: 'USDT', name: 'TetherUS', symbol: 'USDT', color: '#26a17b', icon: 'currency-usd' },
-  { id: 'BNB', name: 'BNB', symbol: 'BNB', color: '#f3ba2f', icon: 'rhombus' },
+  { id: 'USDT-TRC20', name: 'Tether', symbol: 'USDT', color: '#26a17b', logo: 'usdt' },
+  { id: 'BNB', name: 'BNB', symbol: 'BNB', color: '#f3ba2f', logo: 'bnb' },
   { id: 'OG', name: 'OG', symbol: 'OG', color: '#9b59b6', icon: 'infinity' },
   { id: '1000CAT', name: '1000*Simons Cat', symbol: '1000CAT', color: '#e74c3c', icon: 'cat' },
   { id: '1000CHEEMS', name: '1000*cheems.pet', symbol: '1000CHEEMS', color: '#d35400', icon: 'dog' },
@@ -62,7 +63,15 @@ export default function SelectCoinScreen() {
       }}
     >
       <View style={[styles.coinIcon, { backgroundColor: item.color }]}>
-        <MaterialCommunityIcons name={item.icon as any} size={24} color="#fff" />
+        {item.logo ? (
+          <SvgUri
+            width={20}
+            height={20}
+            uri={`https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/white/${item.logo}.svg`}
+          />
+        ) : (
+          <MaterialCommunityIcons name={item.icon as any} size={24} color="#fff" />
+        )}
       </View>
       <View style={styles.coinInfo}>
         <ThemedText type="bold" style={styles.coinSymbol}>{item.symbol}</ThemedText>

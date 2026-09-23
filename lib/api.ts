@@ -25,26 +25,55 @@ async function getAuthHeader() {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  ms = 15000,
+): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+async function parseJsonSafe(response: Response): Promise<any> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
+}
+
 export const api = {
   async get<T = any>(path: string): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${API_URL}${path}`, {
+      const response = await fetchWithTimeout(`${API_URL}${path}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           ...(await getAuthHeader()),
         },
       });
-      return await response.json();
-    } catch (error) {
+      const json = await parseJsonSafe(response);
+      if (!response.ok && json.success === undefined) {
+        return { success: false, error: json.error || `Request failed (${response.status})` };
+      }
+      return json;
+    } catch (error: any) {
+      const msg = error?.name === 'AbortError' ? 'Request timed out' : 'Network error';
       console.error(`API GET ${path} error:`, error);
-      return { success: false, error: 'Network error' };
+      return { success: false, error: msg };
     }
   },
 
   async post<T = any>(path: string, body: any): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${API_URL}${path}`, {
+      const response = await fetchWithTimeout(`${API_URL}${path}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,10 +81,15 @@ export const api = {
         },
         body: JSON.stringify(body),
       });
-      return await response.json();
-    } catch (error) {
+      const json = await parseJsonSafe(response);
+      if (!response.ok && json.success === undefined) {
+        return { success: false, error: json.error || `Request failed (${response.status})` };
+      }
+      return json;
+    } catch (error: any) {
+      const msg = error?.name === 'AbortError' ? 'Request timed out' : 'Network error';
       console.error(`API POST ${path} error:`, error);
-      return { success: false, error: 'Network error' };
+      return { success: false, error: msg };
     }
   },
 

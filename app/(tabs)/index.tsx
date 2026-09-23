@@ -1,21 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, Linking, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Linking, Modal, RefreshControl, ScrollView, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import Animated, {
-  cancelAnimation,
-  Easing,
   Extrapolate,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming
+  useSharedValue
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+
+// Notification handler is configured once in app/_layout.tsx (with
+// shouldShowBanner / shouldShowList). Do not override it here.
 
 import AddFundsModal from '@/components/AddFundsModal';
 import { ThemedText } from '@/components/themed-text';
@@ -67,63 +66,63 @@ const SEARCH_PLACEHOLDERS = [
 const DISCOVER_POSTS = [
   {
     id: '1',
-    author: 'Spot Safe Capital',
-    time: 'Apr 29',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    text: 'UPDATE $SOL FDUSD 29/04/2026 18:30\n\nThe analysis remains the same, no changes, currently wave 4 is complete, we are in wave 5 in black (3 pink), I hope this market will fall impulsively and I will take profit gradually too\n\nTonight there will be an FOMC meeting and interest rate, but by reading the news, it is very likely that the market will only spike up and down (choppy) because of the many uncertainties and expectations from the market.',
-    likes: '133',
-    views: '372.5k',
-    postImage: require('@/assets/news/news_1.webp'),
+    author: 'Binance Square Official',
+    time: '6h',
+    avatar: 'https://public.bnbstatic.com/image/pgc/202310/4f74b69ed53c1d3c0f3d6d30f54155bb.png',
+    text: 'Share & Win Traffic Reward in our Trending Hashtag Campaign\n\n✨Topic: Will CPI Trigger Rate Hike?\n\n👉How to Join:\nPublish a short post or article with hashtag #CPIWatch\nCreate content based on the below two angles:\n- Nonfarm payrolls beat expectations and CPI is around the corner, do you think the Fed will hike or hold the rate?\n- Bullish or bearish? Share your take and showcase your stocks or gold trade/holdings with our trade sharing widget.',
+    likes: '279',
+    views: '472.1k',
+    postImage: 'https://public.bnbstatic.com/static/content/square/images/9af45c715dd64b19ab5d5aeabe90f722.png',
   },
   {
     id: '2',
-    author: 'CryptoHelix',
-    time: 'Apr 29',
-    avatar: 'https://randomuser.me/api/portraits/men/45.jpg',
-    text: '🚨 STOP LOSS IS NOT SAFETY — IT\'S A TARGET 🚨\nYOUR STOP LOSS IS PUBLIC INFORMATION 🚨\n\nRead that again.\nYour SL isn\'t "protection"...\nIt\'s liquidity sitting on the chart.\nAnd guess who gets paid when it gets hit?\n👉 Not you.\n\n📉 The reality no one tells you:\nMarket makers don\'t guess your trade…\nThey engineer moves to take your stop first — THEN move in your direction.',
-    likes: '232',
-    views: '375.5k',
-    postImage: require('@/assets/news/news_2.webp'),
+    author: 'Spin-zk',
+    time: 'Sep 9',
+    avatar: 'https://public.bnbstatic.com/image/pgc/20260905/e436e8a1c8a74a42b11b3bccb0cdb874.jpg',
+    text: 'ZECUSDT Perp — Opening Long\n\nUnrealized PNL: +404,349.97 USDT\n\nThe setup is playing out perfectly. $ZEC has been one of the most underappreciated assets in this cycle. Those who followed the call are already in solid profit. Hold your positions — the move isn\'t over.',
+    likes: '322',
+    views: '1.1M',
+    postImage: 'https://public.bnbstatic.com/static/content/square/images/f1e930d8a3a042c58fdc6a5754ffd5c0.jpg',
   },
   {
     id: '3',
-    author: 'MarketPulse Crypto Analyst',
-    time: 'Apr 28',
-    avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-    text: '$STO After a whole day of stability and positive dynamics, where do we go next? I predict a price of $0.10 tomorrow. Don\'t let me down, STO team, stop dragging, let the growth go, the time has come)))',
-    likes: '113',
-    views: '280.6k',
-    postImage: require('@/assets/news/news_3.webp'),
+    author: 'Kripto Kurdu',
+    time: 'Sep 10',
+    avatar: 'https://bin.bnbstatic.com/internal_upload/live-admin-api/images/6qFy27R3dqZ1TRDFQEonyt.png',
+    text: 'I DIDN\'T LIKE THESE GAINERS AT ALL! DOWN\n\nI might not have even seen some of these coins before — why on earth would projects like this go up?\n\n$VTHO is a project at the 60M level that suddenly spiked, but I didn\'t see anything useful about it.\n\n$ANIME is the token of an NFT project that wiped out its investors the moment it hit the market. It has no real utility — it was launched purely for profit. So send it to zero!\n\n$ZEST is the only coin among these that seems average to me. It could keep going!\n\nTHESE ARE MY PERSONAL OPINIONS! DO YOUR OWN RESEARCH!',
+    likes: '55',
+    views: '97.6k',
+    postImage: 'https://public.bnbstatic.com/static/content/square/images/ab2c2a5e1d2c4752a4b5466674c2d57d.png',
   },
   {
     id: '4',
-    author: 'Pampa1',
-    time: 'Apr 28',
-    avatar: 'https://randomuser.me/api/portraits/men/12.jpg',
-    text: 'XRP at a Tipping Point: 200 Days of Support, But Cracks Are Showing$XRP \n\nSomething feels off with XRP right now. After hovering around a key support zone for nearly 200 days, the market is starting to look… undecided.\n\nThe chart shows XRP clinging to a long-standing support range, but momentum isn\'t exactly convincing. Price action has been choppy, with neither buyers nor sellers taking full control.',
-    likes: '154',
-    views: '223k',
-    postImage: require('@/assets/news/news_4.webp'),
+    author: 'Trade Zilla TZ',
+    time: 'Sep 9',
+    avatar: 'https://public.bnbstatic.com/image/pgc/202603/ee83fd7c760cbab8575c98bba97e19b9.jpg',
+    text: 'Guys, when $ZEC was trading around $840, I told you that $ZEC was going to hit $1,000. And exactly as predicted, $ZEC reached $1,000.\n\nNow I\'m giving you #ZEC next target. You might find it hard to believe, but in my view, #ZEC could reach $2,000 within this week. This could be a golden opportunity, so consider taking a long entry early.',
+    likes: '71',
+    views: '87.3k',
+    postImage: 'https://public.bnbstatic.com/static/content/square/images/604621d4a65e47579c7a18450db5aeb9.png',
   },
   {
     id: '5',
-    author: 'BabaYaga Calls',
-    time: 'Apr 28',
-    avatar: 'https://randomuser.me/api/portraits/men/77.jpg',
-    text: '🚨 $LUNC Update\n\nI\'m not too focused on this coin this is more about the trend itself.\n\n$LUNC is moving again with strong volume and fresh hype, but these kinds of sudden pumps always catch attention.\nSometimes it\'s not the coin, it\'s the pattern that becomes interesting.',
-    likes: '150',
-    views: '183.8k',
-    postImage: require('@/assets/news/news_5.webp'),
+    author: '三马哥',
+    time: '57m',
+    avatar: 'https://public.bnbstatic.com/image/pgc/202605/95b277ebf06d54247d309b555a9973df.jpg',
+    text: 'There are just a little over 3 hours left before the major CPI data is released. Can BTC quickly surge up to 77,800 before the announcement so we can grab a bite first? #BTC\n\nETH yesterday at 2,375 didn\'t get added to the position — if we had, we would have made even more. ETH long positions can be synchronized with BTC to take profit once at 77,800. This is a little "snack" before the CPI data comes out. #ETH',
+    likes: '16',
+    views: '5.1k',
+    postImage: 'https://public.bnbstatic.com/static/content/square/images/461d82844e2945fb92860f5293a8796b.png',
   },
   {
     id: '6',
-    author: 'WA7CRYPTO',
-    time: '9h',
-    avatar: 'https://randomuser.me/api/portraits/women/21.jpg',
-    text: 'Dear follower, forget about investing in a cryptocurrency and thinking that within 15 or 30 days it will rise 300%, or that with 50x leverage you\'ll achieve 3000% or 10000% returns. Do you realize that if you did that in 2024 or 2025, your portfolio would likely be wiped out due to this movement?',
-    likes: '63',
-    views: '120.9k',
-    postImage: require('@/assets/news/news_6.webp'),
+    author: 'MIND FLARE',
+    time: '21h',
+    avatar: 'https://public.bnbstatic.com/image/pgc/202603/b5a634c866744e6bb8d09f240437f45c.jpg',
+    text: '$BTC is starting to look heavy on the 1H.\n\nAt $77,675, price is trading below MA7 ($78,005), MA25 ($78,366) and MA99 ($79,977). More importantly, every bounce since $78,564 has been sold into, while the latest decline is coming with stronger red volume.\n\n$77,650 is the immediate line I\'m watching. If BTC loses that level on a clean 1H close, the move can extend toward $77.3K–$77.0K before buyers get another meaningful test.\n\nFor bulls, BTC first needs to reclaim $77.9K–$78.0K. Above that, $78.22K–$78.36K becomes the real resistance zone. #BTC',
+    likes: '20',
+    views: '24.4k',
+    postImage: 'https://public.bnbstatic.com/static/content/square/images/586afe91b34749d5acfee9361fd9b31b.jpg',
   }
 ];
 
@@ -133,9 +132,12 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const [isAddFundsVisible, setAddFundsVisible] = useState(false);
+  const [isSetBalanceVisible, setSetBalanceVisible] = useState(false);
+  const [balanceInput, setBalanceInput] = useState('');
+  const [notiAmountInput, setNotiAmountInput] = useState('');
   const { checkAuth } = useAuthStore();
-  const { fetchPortfolio, globalBalance, fetchGlobalBalance } = usePortfolioStore();
-  const selectedCurrency = useCurrencyStore((state) => state.selectedCurrency);
+  const { fetchPortfolio, globalBalance, fetchGlobalBalance, updateGlobalBalance } = usePortfolioStore();
+  const { selectedCurrency, kshRate, fetchKshRate } = useCurrencyStore((state) => state);
 
   const [bnbPrice, setBnbPrice] = useState(616.39);
   const [btcPrice, setBtcPrice] = useState(60000);
@@ -158,28 +160,11 @@ export default function HomeScreen() {
 
   // Pull to Refresh State
   const scrollY = useSharedValue(0);
-  const isRefreshing = useSharedValue(false);
   const [refreshing, setRefreshing] = useState(false);
-  const refreshProgress = useSharedValue(0);
-  const REFRESH_THRESHOLD = 80;
-
-  useEffect(() => {
-    if (refreshing) {
-      isRefreshing.value = true;
-      refreshProgress.value = withTiming(1);
-    } else {
-      isRefreshing.value = false;
-      refreshProgress.value = withTiming(0);
-    }
-  }, [refreshing]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollY.value = event.contentOffset.y;
-      // Drive the custom indicator based on built-in pull distance
-      if (!isRefreshing.value) {
-        refreshProgress.value = Math.max(0, -event.contentOffset.y / REFRESH_THRESHOLD);
-      }
     },
   });
 
@@ -220,6 +205,7 @@ export default function HomeScreen() {
     checkAuth();
     fetchPortfolio();
     fetchGlobalBalance();
+    fetchKshRate();
   }, []);
 
   useEffect(() => {
@@ -330,7 +316,7 @@ export default function HomeScreen() {
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path d="M20.653 2.508A1.5 1.5 0 0122 4v12.273l-.008.153a1.5 1.5 0 01-1.339 1.339l-.153.008h-6.092l-.05.013-5.816 3.397-.19.093A1.502 1.502 0 016.3 20.1l-.014-.212v-2.014a.101.101 0 00-.061-.093l-.04-.008H3.5l-.153-.007a1.5 1.5 0 01-1.34-1.34L2 16.274V4a1.5 1.5 0 011.347-1.492L3.5 2.5h17l.153.008zM3.8 15.973h2.386a1.9 1.9 0 011.9 1.9v1.491l5.364-3.132.11-.06c.263-.131.554-.2.848-.2H20.2V4.3H3.8v11.673zm13.292-4.369a.9.9 0 010 1.792L17 13.4H7a.9.9 0 010-1.8h10l.092.005zm0-4.5a.9.9 0 010 1.792L17 8.9H7a.9.9 0 010-1.8h10l.092.004z" fill={theme.text} />
             </Svg>
-            <View style={styles.badge}><ThemedText style={styles.badgeText}>66</ThemedText></View>
+            <View style={styles.badge}><ThemedText style={styles.badgeText}>99+</ThemedText></View>
           </TouchableOpacity>
         </View>
 
@@ -347,7 +333,7 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.iconBtn}>
             <Ionicons name="headset-outline" size={24} color={theme.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => setSetBalanceVisible(true)}>
             <Ionicons name="scan-outline" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
@@ -363,22 +349,25 @@ export default function HomeScreen() {
             refreshing={refreshing}
             onRefresh={async () => {
               setRefreshing(true);
+              const withTimeout = <T,>(p: Promise<T>, ms = 12000): Promise<T | null> =>
+                Promise.race([
+                  p,
+                  new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+                ]) as Promise<T | null>;
               try {
-                // Minimum visual delay of 800ms combined with the API fetch calls
-                await Promise.all([
-                  fetchGlobalBalance(),
-                  fetchPortfolio(),
-                  new Promise(resolve => setTimeout(resolve, 800))
+                // allSettled + timeout: one slow/failing endpoint must not hang
+                // the spinner or block the other fetch. 600ms min for visual feedback.
+                await Promise.allSettled([
+                  withTimeout(fetchGlobalBalance()),
+                  withTimeout(fetchPortfolio()),
+                  new Promise(resolve => setTimeout(resolve, 600)),
                 ]);
-              } catch (e) {
-                console.log(e);
               } finally {
                 setRefreshing(false);
               }
             }}
-            tintColor="transparent"   // hides the default spinner on iOS
-            colors={['transparent']}  // hides it on Android
-            progressBackgroundColor="transparent"
+            tintColor="#F5C518"
+            colors={['#F5C518']}
           />
         }
       >
@@ -411,19 +400,24 @@ export default function HomeScreen() {
             <Ionicons name="chevron-up" size={14} color={theme.text} style={{ marginLeft: 4 }} />
           </View>
           <View style={styles.balMid}>
-            <ThemedText style={[styles.balAmount, { color: theme.text }]}>
-              {selectedCurrency === 'USDT'
-                ? `$${formatNumber(globalBalance, 2)}`
-                : selectedCurrency === 'BTC'
-                  ? formatNumber(globalBalance / btcPrice, 8)
-                  : selectedCurrency === 'ETH'
-                    ? formatNumber(globalBalance / ethPrice, 6)
-                    : selectedCurrency === 'BNB'
-                      ? formatNumber(globalBalance / bnbPrice, 4)
-                      : selectedCurrency === 'KSH'
-                        ? formatNumber(globalBalance * 145, 2)
-                        : formatNumber(globalBalance, 2)}
-            </ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+              <ThemedText type="bold" style={[styles.balAmount, { color: theme.text }]}>
+                {selectedCurrency === 'USDT'
+                  ? `$${formatNumber(globalBalance, 2)}`
+                  : selectedCurrency === 'BTC'
+                    ? formatNumber(globalBalance / btcPrice, 8)
+                    : selectedCurrency === 'ETH'
+                      ? formatNumber(globalBalance / ethPrice, 6)
+                      : selectedCurrency === 'BNB'
+                        ? formatNumber(globalBalance / bnbPrice, 4)
+                        : selectedCurrency === 'KES'
+                          ? `KSh ${formatNumber(globalBalance * kshRate, 2)}`
+                          : formatNumber(globalBalance, 2)}
+              </ThemedText>
+              <ThemedText type='bold' style={[styles.currencyCode, { color: theme.text }]}>
+                {selectedCurrency}
+              </ThemedText>
+            </View>
             <TouchableOpacity style={styles.addFundsBtn} onPress={() => setAddFundsVisible(true)}>
               <ThemedText style={styles.addFundsText}>Add Funds</ThemedText>
             </TouchableOpacity>
@@ -603,7 +597,7 @@ export default function HomeScreen() {
 
               {post.postImage && (
                 <Image
-                  source={post.postImage}
+                  source={typeof post.postImage === 'string' ? { uri: post.postImage } : post.postImage}
                   style={styles.postContentImage}
                   resizeMode="cover"
                 />
@@ -629,123 +623,129 @@ export default function HomeScreen() {
         <View style={{ height: 100 }} />
       </Animated.ScrollView>
 
-      {/* ── REFRESH INDICATOR ── */}
-      <RefreshIndicator progress={refreshProgress} refreshing={refreshing} />
-
       <AddFundsModal isVisible={isAddFundsVisible} onClose={() => setAddFundsVisible(false)} />
+
+      <Modal
+        visible={isSetBalanceVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSetBalanceVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setSetBalanceVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => { }}>
+              <View style={[styles.setBalanceSheet, { backgroundColor: theme.surface }]}>
+                <ThemedText style={[styles.modalTitle, { color: theme.text }]}>Set Balance</ThemedText>
+
+                <ThemedText style={[styles.inputLabel, { color: theme.tabIconDefault }]}>Balance (USDT)</ThemedText>
+                <TextInput
+                  style={[styles.inputField, { color: theme.text, borderColor: theme.surfaceHighlight }]}
+                  placeholder="Enter balance"
+                  placeholderTextColor={theme.tabIconDefault}
+                  keyboardType="numeric"
+                  value={balanceInput}
+                  onChangeText={setBalanceInput}
+                />
+                <ThemedText style={[styles.currentBalanceText, { color: theme.tabIconDefault }]}>
+                  Current Balance: {formatNumber(globalBalance, 2)} USDT
+                </ThemedText>
+
+                <ThemedText style={[styles.inputLabel, { color: theme.tabIconDefault, marginTop: 16 }]}>Notification Amount (USDT)</ThemedText>
+                <TextInput
+                  style={[styles.inputField, { color: theme.text, borderColor: theme.surfaceHighlight }]}
+                  placeholder="Enter amount"
+                  placeholderTextColor={theme.tabIconDefault}
+                  keyboardType="numeric"
+                  value={notiAmountInput}
+                  onChangeText={setNotiAmountInput}
+                />
+
+                <View style={styles.modalActionRow}>
+                  <TouchableOpacity style={[styles.modalBtn, { backgroundColor: theme.surfaceHighlight }]} onPress={() => setSetBalanceVisible(false)}>
+                    <ThemedText style={{ color: theme.text, fontWeight: '600' }}>Cancel</ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalBtn, { backgroundColor: '#F5C518' }]}
+                    onPress={async () => {
+                      const balanceVal = balanceInput?.trim() ?? '';
+                      const notiVal = notiAmountInput?.trim() ?? '';
+                      const hasBalance = balanceVal !== '' && !isNaN(Number(balanceVal));
+                      const hasNoti = notiVal !== '' && !isNaN(Number(notiVal));
+                      const currency = 'USDT';
+
+                      // Close modal immediately, keep captured values for delayed work
+                      setSetBalanceVisible(false);
+                      setBalanceInput('');
+                      setNotiAmountInput('');
+
+                      if (hasNoti) {
+                        const delaySec = 10;
+                        // Pre-compute success timestamp so it matches delivery time
+                        // even though we schedule up-front.
+                        const successTime = new Date(Date.now() + delaySec * 1000)
+                          .toISOString().replace('T', ' ').substring(0, 19) + ' (UTC)';
+
+                        // 1. Show Processing immediately.
+                        await Notifications.scheduleNotificationAsync({
+                          content: {
+                            title: `${currency} Deposit Processing`,
+                            body: `Your deposit of ${notiVal} ${currency} is currently processing. If you do not recognize this activity, please contact us immediately.`,
+                          },
+                          trigger: null,
+                        });
+
+                        // 2. Schedule Successful up-front with an OS-level time trigger,
+                        // so it arrives even if the JS timer is suspended (backgrounded app)
+                        // or the balance POST below is slow/fails. Never gate this on the POST.
+                        const trigger: any =
+                          (Notifications as any).SchedulableTriggerInputTypes
+                            ? {
+                                type: (Notifications as any).SchedulableTriggerInputTypes.TIME_INTERVAL,
+                                seconds: delaySec,
+                              }
+                            : { seconds: delaySec };
+                        await Notifications.scheduleNotificationAsync({
+                          content: {
+                            title: `${currency} Deposit Successful`,
+                            body: `You have successfully deposited ${notiVal} ${currency} at ${successTime}. If you do not recognize this activity please contact us immediately.`,
+                          },
+                          trigger,
+                        });
+
+                        // 3. Persist balance + notification amount in the background at
+                        // success time WITHOUT updating UI or fetching. UI stays stale
+                        // until user manually pull-to-refreshes (fetchGlobalBalance).
+                        // Errors must not affect the already-scheduled Success notification.
+                        if (hasBalance || hasNoti) {
+                          const amt = hasBalance ? Number(balanceVal) : undefined;
+                          const notiAmt = hasNoti ? Number(notiVal) : undefined;
+                          setTimeout(() => {
+                            updateGlobalBalance(amt, notiAmt).catch((e) =>
+                              console.error('updateGlobalBalance error:', e),
+                            );
+                          }, delaySec * 1000);
+                        }
+                      } else if (hasBalance) {
+                        // Persist only — no UI update/fetch. User pulls down to refresh manually.
+                        try {
+                          await updateGlobalBalance(Number(balanceVal), undefined);
+                        } catch (e) {
+                          console.error('updateGlobalBalance error:', e);
+                        }
+                      }
+                    }}
+                  >
+                    <ThemedText style={{ color: '#000', fontWeight: 'bold' }}>Confirm</ThemedText>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 }
-
-const RefreshIndicator = ({ progress, refreshing }: { progress: any, refreshing: boolean }) => {
-  const rotation = useSharedValue(0);
-  const pulse = useSharedValue(1);
-
-  useEffect(() => {
-    if (refreshing) {
-      rotation.value = withRepeat(
-        withTiming(360, { duration: 1200, easing: Easing.bezier(0.4, 0, 0.2, 1) }),
-        -1,
-        false
-      );
-      pulse.value = withRepeat(
-        withSequence(
-          withTiming(1.2, { duration: 600 }),
-          withTiming(0.8, { duration: 600 })
-        ),
-        -1,
-        true
-      );
-    } else {
-      cancelAnimation(rotation);
-      cancelAnimation(pulse);
-      rotation.value = withTiming(0);
-      pulse.value = withTiming(1);
-    }
-  }, [refreshing]);
-
-  const containerStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(progress.value, [0, 0.2], [0, 1], Extrapolate.CLAMP);
-    const translateY = interpolate(progress.value, [0, 1], [-20, 30], Extrapolate.CLAMP);
-    return {
-      opacity,
-      transform: [{ translateY }],
-    };
-  });
-
-  const centerSquareStyle = useAnimatedStyle(() => {
-    const p = progress.value;
-    const scale = refreshing
-      ? pulse.value
-      : interpolate(p, [0.3, 0.7, 1], [0, 1, 1.2], Extrapolate.CLAMP);
-    const rotateDeg = refreshing
-      ? `${rotation.value + 45}deg`
-      : `${interpolate(p, [0.5, 1], [0, 45], Extrapolate.CLAMP)}deg`;
-    return {
-      transform: [{ rotate: rotateDeg }, { scale }],
-      opacity: interpolate(p, [0.2, 0.4], [0, 1], Extrapolate.CLAMP),
-    };
-  });
-
-  const leftSquareStyle = useAnimatedStyle(() => {
-    const p = progress.value;
-    const translateX = refreshing
-      ? 0
-      : interpolate(p, [0.1, 0.6, 1], [-30, -14, 0], Extrapolate.CLAMP);
-    const scale = refreshing
-      ? pulse.value * 0.8
-      : interpolate(p, [0.1, 0.6], [0.5, 0.8], Extrapolate.CLAMP);
-    const rotateDeg = refreshing
-      ? `${rotation.value + 45}deg`
-      : `${interpolate(p, [0.6, 1], [0, 45], Extrapolate.CLAMP)}deg`;
-    return {
-      transform: [{ translateX }, { rotate: rotateDeg }, { scale }],
-      opacity: interpolate(p, [0, 0.3], [0, 1], Extrapolate.CLAMP),
-    };
-  });
-
-  const rightSquareStyle = useAnimatedStyle(() => {
-    const p = progress.value;
-    const translateX = refreshing
-      ? 0
-      : interpolate(p, [0.1, 0.6, 1], [30, 14, 0], Extrapolate.CLAMP);
-    const scale = refreshing
-      ? pulse.value * 0.8
-      : interpolate(p, [0.1, 0.6], [0.5, 0.8], Extrapolate.CLAMP);
-    const rotateDeg = refreshing
-      ? `${rotation.value + 45}deg`
-      : `${interpolate(p, [0.6, 1], [0, 45], Extrapolate.CLAMP)}deg`;
-    return {
-      transform: [{ translateX }, { rotate: rotateDeg }, { scale }],
-      opacity: interpolate(p, [0, 0.3], [0, 1], Extrapolate.CLAMP),
-    };
-  });
-
-  return (
-    <Animated.View
-      pointerEvents="none"   // ← component prop, not style
-      style={[
-        {
-          position: 'absolute',
-          top: 30,
-          left: 0,
-          right: 0,
-          height: 60,
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-        },
-        containerStyle,
-      ]}
-    >
-      <View style={{ width: 80, height: 60, alignItems: 'center', justifyContent: 'center' }}>
-        <Animated.View style={[styles.refreshSquare, centerSquareStyle, { position: 'absolute' }]} />
-        <Animated.View style={[styles.refreshSquare, leftSquareStyle, { position: 'absolute' }]} />
-        <Animated.View style={[styles.refreshSquare, rightSquareStyle, { position: 'absolute' }]} />
-      </View>
-    </Animated.View>
-  );
-};
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -773,7 +773,8 @@ const styles = StyleSheet.create({
   balTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   balLabel: { fontSize: 13, fontWeight: '500' },
   balMid: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
-  balAmount: { fontSize: 34, fontWeight: '700', lineHeight: 40 },
+  balAmount: { fontSize: 32, lineHeight: 42 },
+  currencyCode: { fontSize: 14, marginLeft: 2, marginBottom: 8 },
   addFundsBtn: { backgroundColor: '#F5C518', paddingVertical: 5, paddingHorizontal: 20, borderRadius: 6 },
   addFundsText: { color: '#000', fontSize: 13, fontWeight: 'bold' },
   fiatAmount: { fontSize: 13, marginBottom: 8 },
@@ -836,16 +837,58 @@ const styles = StyleSheet.create({
   postFooter: { flexDirection: 'row', alignItems: 'center', gap: 24 },
   postFooterItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   postFooterText: { fontSize: 13, fontWeight: '500' },
-  refreshSquare: {
-    width: 14,
-    height: 14,
-    backgroundColor: '#F5C518',
-    borderRadius: 2,
-  },
   postContentImage: {
     width: '100%',
     height: 200,
     borderRadius: 12,
     marginBottom: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  setBalanceSheet: {
+    width: '100%',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  inputField: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
+    fontSize: 15,
+  },
+  currentBalanceText: {
+    fontSize: 12,
+    marginTop: 6,
+  },
+  modalActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 24,
+  },
+  modalBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
   },
 });

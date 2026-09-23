@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 const BALANCES = [
-  { id: 'USDT', name: 'TetherUS', amount: '0.00', color: '#26a17b', icon: 'currency-usd' },
+  { id: 'USDT', name: 'Tether', amount: '0.00', color: '#26a17b', icon: 'currency-usd' },
   { id: 'BTC', name: 'Bitcoin', amount: '0.00', color: '#f7931a', icon: 'bitcoin' },
   { id: 'BNB', name: 'BNB', amount: '0.00', color: '#f3ba2f', icon: 'currency-btc' },
 ];
@@ -22,7 +22,7 @@ export default function SpotScreen() {
   const { balances } = usePortfolioStore();
 
   const mappedBalances = [
-    { id: 'USDT', name: 'TetherUS', amount: balances.find(b => b.currency === 'USDT')?.balance || '0.00', color: '#26a17b', icon: 'currency-usd' },
+    { id: 'USDT', name: 'Tether', amount: balances.find(b => b.currency === 'USDT')?.balance || '0.00', color: '#26a17b', icon: 'currency-usd' },
     { id: 'BTC', name: 'Bitcoin', amount: balances.find(b => b.currency === 'BTC')?.balance || '0.00', color: '#f7931a', icon: 'bitcoin' },
     { id: 'BNB', name: 'BNB', amount: balances.find(b => b.currency === 'BNB')?.balance || '0.00', color: '#f3ba2f', icon: 'currency-btc' },
   ];

@@ -3,10 +3,11 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { CryptoCurrency, useCurrencyStore } from '@/store/currencyStore';
+import { useLivePriceConnection, useLivePricesStore } from '@/store/livePricesStore';
 import { usePortfolioStore } from '@/store/portfolioStore';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Dimensions, Image, Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CURRENCIES: { label: CryptoCurrency; icon: string }[] = [
@@ -14,7 +15,6 @@ const CURRENCIES: { label: CryptoCurrency; icon: string }[] = [
   { label: 'ETH', icon: 'ethereum' },
   { label: 'BNB', icon: 'currency-btc' },
   { label: 'USDT', icon: 'currency-usd' },
-  { label: 'KSH', icon: 'cash' },
 ];
 
 export default function AssetsOverviewScreen() {
@@ -23,17 +23,52 @@ export default function AssetsOverviewScreen() {
   const [activeTab, setActiveTab] = useState('Crypto');
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 16 });
+  const selectorRef = useRef<View>(null);
 
   // Selector syntax guarantees re-render on every store change
-  const selectedCurrency = useCurrencyStore((state) => state.selectedCurrency);
-  const setSelectedCurrency = useCurrencyStore((state) => state.setSelectedCurrency);
-  const { fetchGlobalBalance, fetchPortfolio } = usePortfolioStore();
+  const { selectedCurrency, setSelectedCurrency, kshRate } = useCurrencyStore((state) => state);
+  const { fetchGlobalBalance, fetchPortfolio, balances } = usePortfolioStore();
   const insets = useSafeAreaInsets();
+
+  useLivePriceConnection();
+  const prices = useLivePricesStore((s) => s.prices);
+
+  const getBal = (sym: string) => {
+    const found = balances?.find((b: any) => b.currency === sym || b.symbol === sym || b.coin === sym);
+    return found ? Number(found.balance || found.amount || found.available || 0) : 0;
+  };
+
+  const btcAmount = getBal('BTC') || 0.428512;
+  const btcLive = prices['btcusdt'];
+  const btcPriceLive = btcLive?.price ?? 0;
+  const btcChangePercent = btcLive?.changePercent ?? 0;
+  const btcUsdValue = btcAmount * btcPriceLive;
+  const btcPnlUsd = btcUsdValue * (btcChangePercent / 100);
+
+  const trxAmount = getBal('TRX') || 14502.5;
+  const trxLive = prices['trxusdt'];
+  const trxPriceLive = trxLive?.price ?? 0;
+  const trxChangePercent = trxLive?.changePercent ?? 0;
+  const trxUsdValue = trxAmount * trxPriceLive;
+  const trxPnlUsd = trxUsdValue * (trxChangePercent / 100);
 
   const formatNumber = (num: number, decimals: number = 2) => {
     const parts = num.toFixed(decimals).split('.');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return parts.join('.');
+  };
+
+  const getSelectedCurrencyValue = (usdVal: number) => {
+    if (selectedCurrency === 'USDT') return formatNumber(usdVal, 2);
+    if (selectedCurrency === 'KES') return `KSh ${formatNumber(usdVal * kshRate, 2)}`;
+    const targetSymbol = selectedCurrency.toLowerCase() + 'usdt';
+    const targetPrice = prices[targetSymbol]?.price || 1;
+    let decimals = 2;
+    if (selectedCurrency === 'BTC') decimals = 8;
+    if (selectedCurrency === 'ETH') decimals = 6;
+    if (selectedCurrency === 'BNB') decimals = 4;
+    return formatNumber(usdVal / targetPrice, decimals);
   };
 
   const renderCryptoTab = () => (
@@ -45,8 +80,18 @@ export default function AssetsOverviewScreen() {
           Total Assets Value
         </ThemedText>
         <TouchableOpacity
+          ref={selectorRef as any}
           style={[styles.currencySelector, { backgroundColor: theme.surfaceHighlight }]}
-          onPress={() => setDropdownVisible(true)}
+          onPress={() => {
+            selectorRef.current?.measure((x, y, width, height, pageX, pageY) => {
+              const screenWidth = Dimensions.get('window').width;
+              setDropdownPos({
+                top: pageY + height + 8,
+                right: screenWidth - (pageX + width),
+              });
+              setDropdownVisible(true);
+            });
+          }}
         >
           <ThemedText style={[styles.currencySelectorText, { color: theme.text }]}>
             {selectedCurrency}
@@ -55,29 +100,32 @@ export default function AssetsOverviewScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* BNB Asset */}
+      {/* BTC Asset */}
       <View style={styles.assetItem}>
         <View style={styles.assetHeader}>
-          <View style={[styles.coinIcon, { backgroundColor: '#fcd535' }]}>
-            <MaterialCommunityIcons name="currency-btc" size={16} color="#000" />
-          </View>
+          <Image
+            source={{ uri: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' }}
+            style={styles.coinIcon}
+          />
           <View style={styles.coinNames}>
-            <ThemedText type="bold" style={styles.coinTitle}>BNB</ThemedText>
-            <ThemedText style={[styles.coinSubtitle, { color: theme.textSecondary }]}>BNB</ThemedText>
+            <ThemedText type="bold" style={styles.coinTitle}>BTC</ThemedText>
+            <ThemedText style={[styles.coinSubtitle, { color: theme.textSecondary }]}>Bitcoin</ThemedText>
           </View>
           <View style={styles.coinBalance}>
-            <ThemedText type="bold" style={styles.coinAmount}>{formatNumber(0.00001685, 8)}</ThemedText>
-            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>{formatNumber(0.00000014, 8)} {selectedCurrency}</ThemedText>
+            <ThemedText type="bold" style={styles.coinAmount}>{formatNumber(btcAmount, 8)}</ThemedText>
+            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>{getSelectedCurrencyValue(btcUsdValue)} {selectedCurrency}</ThemedText>
           </View>
         </View>
         <View style={styles.assetDetails}>
           <View style={styles.detailRow}>
             <ThemedText style={[styles.detailLabel, { color: theme.textSecondary }]}>Today's PNL</ThemedText>
-            <ThemedText style={[styles.detailValue, { color: theme.text }]}>$0.00(+0.43%)</ThemedText>
+            <ThemedText style={[styles.detailValue, { color: btcChangePercent >= 0 ? '#0FC97B' : '#F04B5A' }]}>
+              {btcPnlUsd >= 0 ? '+' : '-'}${formatNumber(Math.abs(btcPnlUsd), 2)} ({btcChangePercent >= 0 ? '+' : ''}{btcChangePercent.toFixed(2)}%)
+            </ThemedText>
           </View>
           <View style={styles.detailRow}>
             <ThemedText style={[styles.detailLabel, { color: theme.textSecondary }]}>Average Price</ThemedText>
-            <ThemedText style={[styles.detailValue, { color: theme.text }]}>$616.39</ThemedText>
+            <ThemedText style={[styles.detailValue, { color: theme.text }]}>${formatNumber(btcPriceLive, 2)}</ThemedText>
           </View>
         </View>
         <View style={styles.assetActions}>
@@ -90,25 +138,28 @@ export default function AssetsOverviewScreen() {
         </View>
       </View>
       <View style={styles.divider} />
-      {/* OG Asset */}
+      {/* TRX Asset */}
       <View style={styles.assetItem}>
         <View style={styles.assetHeader}>
-          <View style={[styles.coinIcon, { backgroundColor: '#9b59b6' }]}>
-            <MaterialCommunityIcons name="infinity" size={16} color="#fff" />
-          </View>
+          <Image
+            source={{ uri: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1958.png' }}
+            style={styles.coinIcon}
+          />
           <View style={styles.coinNames}>
-            <ThemedText type="bold" style={styles.coinTitle}>OG</ThemedText>
-            <ThemedText style={[styles.coinSubtitle, { color: theme.textSecondary }]}>OG</ThemedText>
+            <ThemedText type="bold" style={styles.coinTitle}>TRX</ThemedText>
+            <ThemedText style={[styles.coinSubtitle, { color: theme.textSecondary }]}>Tron</ThemedText>
           </View>
           <View style={styles.coinBalance}>
-            <ThemedText type="bold" style={styles.coinAmount}>{formatNumber(0.015, 3)}</ThemedText>
-            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>{formatNumber(0.00000011, 8)} {selectedCurrency}</ThemedText>
+            <ThemedText type="bold" style={styles.coinAmount}>{formatNumber(trxAmount, 3)}</ThemedText>
+            <ThemedText style={[styles.coinBtcValue, { color: theme.textSecondary }]}>{getSelectedCurrencyValue(trxUsdValue)} {selectedCurrency}</ThemedText>
           </View>
         </View>
         <View style={styles.assetDetails}>
           <View style={styles.detailRow}>
             <ThemedText style={[styles.detailLabel, { color: theme.textSecondary }]}>Today's PNL</ThemedText>
-            <ThemedText style={[styles.detailValue, { color: theme.text }]}>$0.00(-1.23%)</ThemedText>
+            <ThemedText style={[styles.detailValue, { color: trxChangePercent >= 0 ? '#0FC97B' : '#F04B5A' }]}>
+              {trxPnlUsd >= 0 ? '+' : '-'}${formatNumber(Math.abs(trxPnlUsd), 2)} ({trxChangePercent >= 0 ? '+' : ''}{trxChangePercent.toFixed(2)}%)
+            </ThemedText>
           </View>
         </View>
         <View style={styles.assetActions}>
@@ -156,7 +207,7 @@ export default function AssetsOverviewScreen() {
                 await Promise.all([
                   fetchGlobalBalance(),
                   fetchPortfolio(),
-                  new Promise(resolve => setTimeout(resolve, 600)),
+                  new Promise(resolve => setTimeout(resolve, 400)),
                 ]);
               } finally {
                 setRefreshing(false);
@@ -222,11 +273,18 @@ export default function AssetsOverviewScreen() {
       >
         <TouchableWithoutFeedback onPress={() => setDropdownVisible(false)}>
           <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View 
-                style={[styles.dropdownSheet, { backgroundColor: theme.surface, paddingBottom: Math.max(insets.bottom + 20, 36) }]}
+            <TouchableWithoutFeedback onPress={() => { }}>
+              <View
+                style={[
+                  styles.dropdownSheet, 
+                  { 
+                    backgroundColor: theme.surface,
+                    position: 'absolute',
+                    top: dropdownPos.top,
+                    right: dropdownPos.right
+                  }
+                ]}
               >
-                <View style={styles.dropdownHandle} />
                 <ThemedText style={[styles.dropdownTitle, { color: theme.text }]}>
                   Select Currency
                 </ThemedText>
@@ -341,45 +399,45 @@ const styles = StyleSheet.create({
   assetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   coinIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   coinNames: {
     flex: 1,
   },
   coinTitle: {
-    fontSize: 17,
+    fontSize: 15,
   },
   coinSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
   },
   coinBalance: {
     alignItems: 'flex-end',
   },
   coinAmount: {
-    fontSize: 16,
+    fontSize: 15,
   },
   coinBtcValue: {
-    fontSize: 12.5,
+    fontSize: 11.5,
   },
   assetDetails: {
-    marginBottom: 16,
-    paddingLeft: 48,
+    marginBottom: 8,
+    paddingLeft: 42,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   detailLabel: {
-    fontSize: 13,
+    fontSize: 12,
   },
   detailValue: {
     fontSize: 12,
@@ -388,17 +446,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
+    marginTop: -4,
   },
   assetContent: {
-    paddingLeft: 48,
+    paddingLeft: 42,
   },
   smallButton: {
     paddingVertical: 4,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     borderRadius: 6,
   },
   smallButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontStyle: 'normal',
     fontWeight: '600',
   },
@@ -428,28 +487,24 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: 'rgba(205, 205, 205, 0.08)',
-    marginVertical: 18,
+    marginVertical: 12,
   },
   // Modal / Dropdown
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'flex-end',
   },
   dropdownSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    paddingTop: 12,
-  },
-  dropdownHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center',
-    marginBottom: 16,
+    width: 190,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    paddingTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   dropdownTitle: {
     fontSize: 16,
